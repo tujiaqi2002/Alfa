@@ -159,9 +159,14 @@ export function createTerminal() {
     } else if (booted) {
       let x = PAD_X;
       inRows.forEach((r, i) => { x = drawRow(r, y); if (i < inRows.length - 1) y += LH; });
+      const ghost = suggestion().slice(0, Math.max(0, cols - Math.round((x - PAD_X) / charW)));
+      if (ghost) { ctx.fillStyle = palette.dim; ctx.shadowColor = palette.dim; ctx.fillText(ghost, x, y); }
       if (caretOn) {
         ctx.shadowColor = palette.acc;
-        if (focused || demoActive) { ctx.fillStyle = palette.acc; ctx.fillRect(x, y + 2, charW, LH - 6); }
+        if (focused || demoActive) {
+          ctx.fillStyle = palette.acc; ctx.fillRect(x, y + 2, charW, LH - 6);
+          if (ghost) { ctx.fillStyle = palette.bg; ctx.fillText(ghost[0], x, y); }
+        }
         else { ctx.strokeStyle = palette.acc; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 3, charW - 2, LH - 8); }
       }
     }
@@ -378,6 +383,22 @@ export function createTerminal() {
     'A pipeline without data quality checks is just a very fast way to be wrong.'
   ];
 
+  // Lay items out in aligned columns so a long listing never breaks a name across lines
+  function columns(items) {
+    if (!items.length) return;
+    const colW = Math.max(...items.map((it) => it.t.length)) + 2;
+    const fitsOneLine = items.reduce((n, it) => n + it.t.length + 2, -2) <= cols;
+    const perRow = fitsOneLine ? items.length : Math.max(1, Math.floor((cols + 2) / colW));
+    for (let i = 0; i < items.length; i += perRow) {
+      const segs = [];
+      items.slice(i, i + perRow).forEach((it, j, row) => {
+        segs.push(it);
+        if (j < row.length - 1) segs.push({ t: ' '.repeat(fitsOneLine ? 2 : colW - it.t.length), c: 'ink' });
+      });
+      pushRaw(segs);
+    }
+  }
+
   function sliceLines(cmd, a) {
     let num = 10;
     const rest = [];
@@ -408,7 +429,8 @@ export function createTerminal() {
         '  resume           open resume.pdf',
         '  theme | arcade   change the vibe',
         '  ls cd cat pwd    shell basics <dim>(+ tree grep head tail find wc man)</dim>',
-        '  clear | exit'
+        '  clear | exit',
+        '<dim>tab or → autocompletes · ↑ ↓ history</dim>'
       ].join('\n'));
     },
     whoami() { print('jiaqi tu — data engineer @ 407 ETR · toronto, on'); },
@@ -477,18 +499,7 @@ export function createTerminal() {
         const dir = x === '.' || x === '..' || isDir(n[x]);
         return { t: dir ? x + '/' : x, c: dir ? 'acc' : 'ink' };
       });
-      // Lay names out in aligned columns so a long listing never breaks a name across lines
-      const colW = Math.max(...items.map((it) => it.t.length)) + 2;
-      const fitsOneLine = items.reduce((s, it) => s + it.t.length + 2, -2) <= cols;
-      const perRow = fitsOneLine ? items.length : Math.max(1, Math.floor((cols + 2) / colW));
-      for (let i = 0; i < items.length; i += perRow) {
-        const segs = [];
-        items.slice(i, i + perRow).forEach((it, j, row) => {
-          segs.push(it);
-          if (j < row.length - 1) segs.push({ t: ' '.repeat(fitsOneLine ? 2 : colW - it.t.length), c: 'ink' });
-        });
-        pushRaw(segs);
-      }
+      columns(items);
     },
     cat(a) {
       if (!a.length) return err('cat: missing file operand');
@@ -751,7 +762,8 @@ export function createTerminal() {
   alias('python3 node pyspark java irb', cmds.python);
   alias('vi nano emacs code', cmds.vim);
   alias('apt-get brew pip pip3 npm yarn yum', cmds.apt);
-  alias('export true false alias unalias source set unset', () => {});
+  const NOOPS = 'export true false alias unalias source set unset';
+  alias(NOOPS, () => {});
   alias('shutdown poweroff halt', cmds.exit);
   'mkdir touch rm rmdir mv cp chmod chown ln'.split(' ').forEach((c) => { cmds[c] = readOnly(c); });
   alias('lolcat sl', say('<dim>choo choo. (not installed)</dim>'));
@@ -784,31 +796,66 @@ export function createTerminal() {
     emit('run', line);
   }
 
-  function complete(el) {
-    const v = el.value;
+  /* ---------- completion ---------- */
+  // Silent no-op builtins still run, but would only clutter suggestions
+  const completable = () => Object.keys(cmds).filter((c) => NOOPS.split(' ').indexOf(c) < 0);
+  const PRIMARY = ['help', 'whoami', 'about', 'neofetch', 'agents', 'skills', 'quests', 'projects', 'open', 'contact', 'resume', 'theme', 'ls', 'cd', 'cat', 'pwd', 'tree', 'grep', 'man', 'clear', 'exit'];
+  const commonPrefix = (list) => list.reduce((p, s) => { let i = 0; while (i < p.length && p[i] === s[i]) i++; return p.slice(0, i); });
+  // Candidates for the last word of the line, aware of what each command takes: { head, base, list: [{ t, end }] }
+  function candidates(v) {
+    const pick = (head, base, names) => ({ head, base, list: names.filter((n) => n.indexOf(base) === 0).sort().map((n) => ({ t: n, end: ' ' })) });
     const sp = v.lastIndexOf(' ');
-    const set = (s) => { el.value = input = s; dirty(); };
-    const show = (list) => { pushRaw([{ t: prompt(), c: 'acc' }, { t: v, c: 'ink' }]); print('<dim>' + list.join('  ') + '</dim>'); };
-    const common = (list) => list.reduce((p, s) => { let i = 0; while (i < p.length && p[i] === s[i]) i++; return p.slice(0, i); });
-    if (sp < 0) {
-      const low = v.toLowerCase();
-      const hit = Object.keys(cmds).filter((c) => c.indexOf(low) === 0).sort();
-      if (low && hit.length === 1) set(hit[0] + ' ');
-      else if (low && hit.length > 1) show(hit);
-      return;
+    if (sp < 0) return pick('', v.toLowerCase(), completable());
+    const before = tokens(v.slice(0, sp));
+    const cmd = (before[0] || '').toLowerCase(), argN = before.length;
+    const head = v.slice(0, sp + 1), word = v.slice(sp + 1);
+    if (/^(man|which|whereis|type)$/.test(cmd)) return pick(head, word.toLowerCase(), completable());
+    if (cmd === 'theme' && argN === 1) return pick(head, word, ['light', 'dark']);
+    if (cmd === 'git' && argN === 1) return pick(head, word, ['status', 'log', 'branch']);
+    if (cmd === 'sudo' && argN === 1) return pick(head, word, ['hire-me']);
+    if (cmd === 'open' && word.indexOf('/') < 0) {
+      const named = pick(head, word.toLowerCase(), Object.keys(PROJECTS).concat(Object.keys(LINKS)));
+      if (named.list.length) return named;
     }
-    const word = v.slice(sp + 1), slash = word.lastIndexOf('/');
+    const slash = word.lastIndexOf('/');
     const dirPart = slash >= 0 ? word.slice(0, slash + 1) : '';
     const base = word.slice(dirPart.length);
     const d = nodeAt(resolve(dirPart || '.'));
-    if (!isDir(d)) return;
-    const hit = Object.keys(d).filter((n) => n.indexOf(base) === 0 && (base[0] === '.' || n[0] !== '.')).sort();
-    if (!hit.length) return;
-    const head = v.slice(0, sp + 1) + dirPart;
-    if (hit.length === 1) return set(head + hit[0] + (isDir(d[hit[0]]) ? '/' : ' '));
-    const pre = common(hit);
-    if (pre.length > base.length) set(head + pre);
-    else show(hit.map((n) => (isDir(d[n]) ? n + '/' : n)));
+    if (!isDir(d)) return null;
+    let names = Object.keys(d).filter((n) => base[0] === '.' || n[0] !== '.');
+    if (cmd === 'cd') names = names.filter((n) => isDir(d[n]));
+    const r = pick(head + dirPart, base, names);
+    r.list.forEach((it) => { if (isDir(d[it.t])) it.end = '/'; });
+    return r;
+  }
+  function historyHint(v) {
+    for (let i = hist.length - 1; i >= 0; i--) if (hist[i].length > v.length && hist[i].indexOf(v) === 0) return hist[i].slice(v.length);
+    return '';
+  }
+  // Fish-style ghost text after the cursor: a unique/common completion, else the latest matching history line
+  function suggestion() {
+    if (!focused || !input) return '';
+    const c = candidates(input);
+    let full = '';
+    if (c && c.list.length === 1) full = c.head + c.list[0].t + (c.list[0].end === '/' ? '/' : '');
+    else if (c && c.list.length > 1) full = c.head + commonPrefix(c.list.map((it) => it.t));
+    if (full.length > input.length && full.toLowerCase().indexOf(input.toLowerCase()) === 0) return full.slice(input.length);
+    return historyHint(input);
+  }
+  function complete(el) {
+    const v = el.value;
+    const set = (s) => { el.value = input = s; dirty(); };
+    const show = (list) => { pushRaw([{ t: prompt(), c: 'acc' }, { t: v, c: 'ink' }]); columns(list.map((t) => ({ t, c: 'dim' }))); };
+    if (!v.trim()) return show(PRIMARY);
+    const c = candidates(v);
+    if (c && c.list.length === 1) return set(c.head + c.list[0].t + c.list[0].end);
+    if (c && c.list.length > 1) {
+      const pre = commonPrefix(c.list.map((it) => it.t));
+      if (pre.length > c.base.length) return set(c.head + pre);
+    }
+    const h = historyHint(v);
+    if (h) return set(v + h);
+    if (c && c.list.length > 1) show(c.list.map((it) => it.t + (it.end === '/' ? '/' : '')));
   }
 
   /* ---------- demo / scripted typing ---------- */
@@ -865,6 +912,9 @@ export function createTerminal() {
       } else if (e.key === 'Tab') {
         e.preventDefault(); emit('key', 'Tab');
         complete(el);
+      } else if (e.key === 'ArrowRight' && el.selectionStart === el.value.length) {
+        const g = suggestion();
+        if (g) { e.preventDefault(); el.value = input = input + g; dirty(); }
       } else if (e.key === 'Escape') {
         e.preventDefault(); emit('exit');
       } else if (e.key === 'PageUp') {
