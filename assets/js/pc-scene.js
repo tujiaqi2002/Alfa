@@ -382,26 +382,33 @@ export function mountScene(stage, term, opts) {
   floppy(0x1c1d1c, 1.0, 0.95, 0.32, 0xc8ff2e);
   floppy(0x4a5866, 1.06, 0.9, -0.12, 0xf1ece0).position.y = 0.019;
 
-  /* ---------- intro sticky note on the left edge of the CRT (click to read) ---------- */
-  const SW = 0.44, SH = 0.44;
+  /* ---------- intro sticky note lying on the desk in the lamp light (click to read) ---------- */
+  const SW = 0.42, SH = 0.42, NOTE_RY = 0.18;
   const stickyGeo = new THREE.PlaneGeometry(SW, SH, 1, 16);
   const sgp = stickyGeo.attributes.position;
   for (let i = 0; i < sgp.count; i++) {
-    const free = 1 - (sgp.getY(i) + SH / 2) / SH; // 0 at the glue strip, 1 at the loose bottom edge
-    sgp.setZ(i, 0.04 * Math.pow(free, 2.4));
+    const free = 1 - (sgp.getY(i) + SH / 2) / SH; // 0 at the glue strip, 1 at the loose front edge
+    sgp.setZ(i, 0.03 * Math.pow(free, 2.6));
   }
   stickyGeo.computeVertexNormals();
-  const introEl = document.querySelector('.intro__me');
-  const stickyTex = stickyTexture(introEl ? introEl.textContent.trim().replace(/\s+/g, ' ') : '');
+  const noteBody = document.querySelector('[data-pc-note-body]');
+  const stickyTex = stickyTexture(noteBody ? noteBody.textContent.trim().replace(/\s+/g, ' ') : '');
   stickyTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  // Darkened albedo so the lime survives the strong lamp hotspot instead of blowing out to white
   const sticky = new THREE.Mesh(stickyGeo, new THREE.MeshStandardMaterial({
-    map: stickyTex, emissiveMap: stickyTex, emissive: 0xffffff, emissiveIntensity: 0.32, roughness: 0.9
+    map: stickyTex, color: 0x9a9a9a, emissiveMap: stickyTex, emissive: 0xffffff, emissiveIntensity: 0.12, roughness: 0.9
   }));
-  sticky.position.set(-0.72, 0.84, FRONT + 0.064);
-  sticky.rotation.z = 0.05;
-  sticky.receiveShadow = true;
-  scene.add(sticky);
-  const stickyLook = new V3(-0.72, 0.84, FRONT + 0.075);
+  sticky.rotation.x = -Math.PI / 2;
+  sticky.position.y = 0.002;
+  sticky.castShadow = true; sticky.receiveShadow = true;
+  const stickyG = new THREE.Group();
+  stickyG.position.set(-1.14, 0, 0.26);
+  stickyG.rotation.y = NOTE_RY;
+  stickyG.add(sticky);
+  scene.add(stickyG);
+  const stickyLook = new V3(-1.14, 0.006, 0.26);
+  // Read from above and slightly in front, aligned with the note so the text is upright
+  const noteDir = new V3(Math.sin(NOTE_RY) * 0.42, 1, Math.cos(NOTE_RY) * 0.42).normalize();
 
   /* ---------- lights ---------- */
   const hemi = new THREE.HemisphereLight(0x9fb4c8, 0x2a2018, 0.35);
@@ -446,7 +453,7 @@ export function mountScene(stage, term, opts) {
   term.on('run', () => { hddUntil = performance.now() + 450; });
 
   /* ---------- camera rig ---------- */
-  const look = new V3(0, 0.62, -0.1), lookZoom = new V3(0, SCR_Y, FRONT);
+  const look = new V3(0, 0.62, -0.1), lookNote = new V3(-0.25, 0.5, -0.1), lookZoom = new V3(0, SCR_Y, FRONT);
   const wideDir = new V3(0.12, 0.2, 1).normalize();
   const camPos = new V3(), camLook = new V3();
   const goalPos = new V3(), goalLook = new V3();
@@ -454,7 +461,8 @@ export function mountScene(stage, term, opts) {
 
   function goals() {
     const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2;
-    const dWide = Math.max(3.55, (sticky.visible ? 2.5 : 2.15) / (t * aspect));
+    // With the desk note shown, frame a little wider and lower so the lamp-lit note stays in view
+    const dWide = sticky.visible ? Math.max(3.85, 3.0 / (t * aspect)) : Math.max(3.55, 2.15 / (t * aspect));
     const dZoom = Math.max(1.72, 1.2 / (t * aspect));
     let scrollP = 0;
     if (!reduce) {
@@ -466,11 +474,12 @@ export function mountScene(stage, term, opts) {
       goalPos.set(pointer.x * 0.06, SCR_Y + pointer.y * 0.03, FRONT + dZoom);
     } else if (view === 'note') {
       // Keep the note inside the unmasked middle band of the stage
-      const dNote = Math.max((SH * 1.55) / t, (SW * 1.55) / (t * aspect));
+      const dNote = Math.max((SH * 1.6) / t, (SW * 1.6) / (t * aspect));
       goalLook.copy(stickyLook);
-      goalPos.set(stickyLook.x + pointer.x * 0.04, stickyLook.y + 0.14 + pointer.y * 0.02, stickyLook.z + dNote);
+      goalPos.copy(stickyLook).addScaledVector(noteDir, dNote);
+      goalPos.x += pointer.x * 0.03; goalPos.z -= pointer.y * 0.02;
     } else {
-      goalLook.copy(look);
+      goalLook.copy(sticky.visible ? lookNote : look);
       if (aspect < 1) goalLook.y -= 0.45 * (1 - aspect);
       goalPos.copy(goalLook).addScaledVector(wideDir, dWide);
       goalPos.x += pointer.x * 0.35; goalPos.y += pointer.y * 0.16 + scrollP * 0.35;

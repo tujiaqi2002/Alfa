@@ -179,70 +179,6 @@
     })();
   }
 
-  /* ---------------- Carousel ---------------- */
-  function initCarousel() {
-    var car = $('[data-carousel]');
-    if (!car) return;
-    var slides = $$('.slide', car);
-    var nowEl = $('[data-slide-now]'), totalEl = $('[data-slide-total]');
-    if (totalEl) totalEl.textContent = String(slides.length).padStart(2, '0');
-
-    var down = false, moved = false, sx = 0, sl = 0, pid = null;
-    car.addEventListener('pointerdown', function (e) {
-      if (e.pointerType !== 'mouse') return;
-      down = true; moved = false; sx = e.clientX; sl = car.scrollLeft; pid = e.pointerId;
-    });
-    addEventListener('pointermove', function (e) {
-      if (!down) return;
-      var dx = e.clientX - sx;
-      if (!moved && Math.abs(dx) > 5) {
-        moved = true;
-        car.classList.add('is-dragging');
-        try { car.setPointerCapture(pid); } catch (err) {}
-      }
-      if (moved) car.scrollLeft = sl - dx;
-    });
-    addEventListener('pointerup', function () {
-      if (!down) return;
-      down = false;
-      if (moved) {
-        var cur = car.scrollLeft;
-        car.classList.remove('is-dragging');
-        car.scrollLeft = cur;
-        snapTo(nearest());
-      }
-    });
-    car.addEventListener('click', function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
-
-    function nearest() {
-      var best = 0, bd = Infinity, pad = parseFloat(getComputedStyle(car).paddingLeft) || 0;
-      slides.forEach(function (s, i) {
-        var d = Math.abs(s.offsetLeft - pad - car.scrollLeft);
-        if (d < bd) { bd = d; best = i; }
-      });
-      return best;
-    }
-    function snapTo(i) {
-      i = Math.max(0, Math.min(slides.length - 1, i));
-      var pad = parseFloat(getComputedStyle(car).paddingLeft) || 0;
-      car.scrollTo({ left: slides[i].offsetLeft - pad, behavior: reduce ? 'auto' : 'smooth' });
-    }
-    $$('[data-slide]').forEach(function (b) {
-      b.addEventListener('click', function () { snapTo(nearest() + parseInt(b.getAttribute('data-slide'), 10)); });
-    });
-    car.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowRight') { e.preventDefault(); snapTo(nearest() + 1); }
-      if (e.key === 'ArrowLeft') { e.preventDefault(); snapTo(nearest() - 1); }
-    });
-    var raf;
-    car.addEventListener('scroll', function () {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(function () {
-        if (nowEl) nowEl.textContent = String(nearest() + 1).padStart(2, '0');
-      });
-    }, { passive: true });
-  }
-
   /* ---------------- Simulated run log ---------------- */
   function initLog() {
     var log = $('[data-log]');
@@ -344,7 +280,6 @@
   initClock();
   initXP();
   initGitHub();
-  initCarousel();
   initLog();
   initKonami();
   initCursor();

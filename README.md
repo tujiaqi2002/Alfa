@@ -7,12 +7,10 @@ Personal website of **Jiaqi Tu**, Data Engineer in Toronto — amplified by a pe
 A minimal, editorial layout with a data / AI / gamer layer:
 
 - Interactive isometric “data landscape” hero (canvas) with a HUD
-- **Console:** a 3D retro PC on a desk (Three.js) whose CRT runs a live, interactive terminal — click the screen or press <kbd>~</kbd>. A sticky note on the left of the monitor carries the intro; click it to zoom in and read
+- **Console:** a 3D retro PC on a desk (Three.js) whose CRT runs a live, interactive terminal — click the screen or press <kbd>~</kbd>. The intro is a sticky note lying on the desk in the lamp light; click it to zoom in and read
 - Player card with photo, live XP, stats and a skills loadout
-- AI agent network diagram (orchestrator → research / code / review / data / docs agents → multiple providers)
 - Quest-log career timeline
 - Medallion pipeline diagram (Bronze → Silver → Gold) with a simulated run log
-- Draggable project carousel with procedurally drawn artwork
 - Photo mode gallery and a Konami-code arcade mode
 - Light/dark theme, reduced-motion support, responsive layout
 
@@ -26,7 +24,6 @@ index.html
 assets/
   css/style.css
   js/landscape.js   hero canvas
-  js/art.js         project card artwork + AI network diagram
   js/main.js        interactions, theme, arcade mode
   js/pc.js          console section bootstrap (module)
   js/pc-scene.js    Three.js desk / retro PC scene
@@ -50,4 +47,4 @@ Published with GitHub Pages from the `main` branch (root). Push to `main` and Pa
 
 ## Edit content
 
-Content lives directly in `index.html` (profile, AI, quests, pipeline, projects, photos, contact). Terminal commands and links are in `assets/js/terminal.js`.
+Content lives directly in `index.html` (profile, quests, pipeline, photos, contact; the desk note's intro text is the hidden `[data-pc-note]` block in the console section). Terminal commands, projects and links are in `assets/js/terminal.js`.

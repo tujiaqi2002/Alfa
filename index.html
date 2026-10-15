@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/style.css?v=202610151539" />
+  <link rel="stylesheet" href="assets/css/style.css?v=202610151558" />
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -47,12 +47,10 @@
 
   <header class="site-header">
     <a class="brand" href="#top">Jiaqi Tu</a>
-    <p class="role">Data Engineer, AI agent builder</p>
+    <p class="role">Data Engineer</p>
     <nav class="nav" aria-label="Primary">
       <a href="#profile">Profile</a>
-      <a href="#ai">AI</a>
       <a href="#quests">Quests</a>
-      <a href="#work">Work</a>
       <a href="#contact">Contact</a>
     </nav>
     <div class="header-actions">
@@ -68,10 +66,6 @@
     <section class="hero" id="top" aria-label="Intro">
       <canvas id="landscape" aria-hidden="true"></canvas>
 
-      <div class="hud hud--tl mono" aria-hidden="true">
-        <span>SYS://JIAQI_TU</span>
-        <span>BUILD 2026.10</span>
-      </div>
       <div class="hud hud--tr mono" aria-hidden="true">
         <span>43.6532° N</span>
         <span>79.3832° W</span>
@@ -81,29 +75,13 @@
         <span>VAL <b data-hud="val">0.000</b></span>
         <span>FPS <b data-hud="fps">--</b></span>
       </div>
-      <p class="hud hud--hint mono" aria-hidden="true">Each tower is a data partition — move to light a trail, click to send a wave.</p>
 
       <h1 class="sr-only">Jiaqi Tu — Data Engineer</h1>
       <div class="hero__copy">
         <div class="hero__cta">
-          <a class="pill" href="#intro">Press start</a>
+          <a class="pill" href="#console">Press start</a>
           <span class="mono muted">Scroll down</span>
         </div>
-      </div>
-    </section>
-
-    <!-- INTRO -->
-    <section class="intro" id="intro">
-      <div class="intro__big" data-reveal>
-        <p class="intro__hello">Hello, world.</p>
-        <p class="intro__lead">I cherish clean schemas, idempotent jobs, AI agents that multiply what one engineer can ship &amp; data that people can actually trust.</p>
-      </div>
-      <div class="intro__small" data-reveal>
-        <p class="intro__hi">Hi there, it looks like you've spawned in my corner of the internet.</p>
-        <p class="intro__me">I'm Jiaqi, a Toronto-based data engineer at 407 ETR, turning messy multi-source data into governed, analysis-ready data products on AWS &amp; Databricks. Whether you're hiring, building, or just wandered in — welcome.</p>
-        <p>I also run a personal network of AI agents across multiple providers — research, code, review — to break through one-person productivity limits.</p>
-        <p class="mono muted small">Tip: press <kbd>~</kbd> anywhere, or click the computer below, to use the console.</p>
-        <a class="pill" href="assets/Jiaqi_Tu_Resume.pdf" target="_blank" rel="noopener">Download resume</a>
       </div>
     </section>
 
@@ -126,6 +104,10 @@
           <button type="button" data-cmd="contact">contact</button>
         </div>
         <button class="pill" type="button" data-pc-focus>Type a command</button>
+      </div>
+      <div class="sr-only" data-pc-note>
+        <p>Hi there, it looks like you've spawned in my corner of the internet.</p>
+        <p data-pc-note-body>I'm Jiaqi, a Toronto-based data engineer at 407 ETR, turning messy multi-source data into governed, analysis-ready data products on AWS &amp; Databricks. Whether you're hiring, building, or just wandered in — welcome.</p>
       </div>
       <input class="pc__input" data-pc-input type="text" aria-label="Terminal command" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" />
       <div class="sr-only" aria-live="polite" data-pc-live></div>
@@ -163,7 +145,6 @@
             <div><dt>Guild</dt><dd>407 ETR</dd></div>
             <div><dt>Spawn</dt><dd>Toronto, ON</dd></div>
             <div><dt>Main</dt><dd>Python · PySpark · SQL</dd></div>
-            <div><dt>Buff</dt><dd class="accent">AI agent network</dd></div>
             <div><dt>Joined</dt><dd>May 2023</dd></div>
           </dl>
           <div class="xp">
@@ -183,37 +164,31 @@
           <div class="loadout" data-reveal>
             <p class="loadout__title mono">Loadout / Inventory</p>
             <div class="slot">
-              <p class="slot__name mono"><span>A</span>AI &amp; Agents</p>
-              <ul class="chips">
-                <li class="is-hot">Multi-provider LLMs</li><li class="is-hot">Personal agent network</li><li>Agent orchestration</li><li>GitHub Copilot</li><li>OpenAI Codex</li>
-              </ul>
-            </div>
-            <div class="slot">
-              <p class="slot__name mono"><span>B</span>Cloud &amp; Big Data</p>
+              <p class="slot__name mono"><span>A</span>Cloud &amp; Big Data</p>
               <ul class="chips">
                 <li>Amazon S3</li><li>Redshift</li><li>AWS Glue</li><li>Step Functions</li><li>Lambda</li><li>Transfer Family</li><li>DynamoDB</li><li>EventBridge</li><li>CloudFormation</li><li>AppFlow</li><li>SageMaker</li><li>CodeCommit</li><li>Secrets Manager</li><li>IAM</li><li>Systems Manager</li><li class="is-hot">Databricks</li>
               </ul>
             </div>
             <div class="slot">
-              <p class="slot__name mono"><span>C</span>Languages</p>
+              <p class="slot__name mono"><span>B</span>Languages</p>
               <ul class="chips">
                 <li class="is-hot">Python</li><li class="is-hot">PySpark</li><li class="is-hot">SQL</li><li>Bash / Shell</li><li>C++</li><li>C</li>
               </ul>
             </div>
             <div class="slot">
-              <p class="slot__name mono"><span>D</span>Data Engineering</p>
+              <p class="slot__name mono"><span>C</span>Data Engineering</p>
               <ul class="chips">
                 <li>ETL / ELT</li><li>Ingestion</li><li>Data modeling</li><li>Dimensional modeling</li><li>SCD Type 1 &amp; 2</li><li>MDM</li><li>Customer 360</li><li>Data quality</li><li>Metadata management</li><li>Performance tuning</li>
               </ul>
             </div>
             <div class="slot">
-              <p class="slot__name mono"><span>E</span>Databases &amp; Warehouses</p>
+              <p class="slot__name mono"><span>D</span>Databases &amp; Warehouses</p>
               <ul class="chips">
                 <li>Amazon Redshift</li><li>SQL Server</li><li>PostgreSQL</li><li>DynamoDB</li>
               </ul>
             </div>
             <div class="slot">
-              <p class="slot__name mono"><span>F</span>Tools &amp; Delivery</p>
+              <p class="slot__name mono"><span>E</span>Tools &amp; Delivery</p>
               <ul class="chips">
                 <li>Git</li><li>Jenkins</li><li>CI/CD</li><li>REST APIs</li>
               </ul>
@@ -223,45 +198,10 @@
       </div>
     </section>
 
-    <!-- AI -->
-    <section class="section" id="ai">
-      <header class="section__head" data-reveal>
-        <span class="section__idx mono">(02)</span>
-        <h2>AI agent network</h2>
-        <p class="section__sub">I orchestrate multiple AI providers into a personal network of agents — running research, code and review in parallel to break through one-person productivity limits.</p>
-      </header>
-
-      <div class="ai">
-        <figure class="ai__net" data-reveal>
-          <div class="ai__svg" data-ai-net></div>
-          <figcaption class="ai__hud mono">
-            <span>Party <b>1 + 5</b></span>
-            <span>Providers <b>multi</b></span>
-            <span>Mode <b>co-op</b></span>
-          </figcaption>
-        </figure>
-
-        <div class="ai__side">
-          <ol class="ai__agents" data-reveal>
-            <li><b>Research</b><span>reads docs, compares approaches</span></li>
-            <li><b>Code</b><span>drafts pipelines &amp; refactors</span></li>
-            <li><b>Review</b><span>a second opinion on every diff</span></li>
-            <li><b>Data</b><span>SQL &amp; PySpark exploration</span></li>
-            <li><b>Docs</b><span>specs, READMEs, runbooks</span></li>
-          </ol>
-          <ul class="ai__rules" data-reveal>
-            <li><span class="mono">01</span><div><b>Multi-provider</b><p>Route each task to the model that fits it — no single-vendor ceiling.</p></div></li>
-            <li><span class="mono">02</span><div><b>Agents in parallel</b><p>A squad instead of a solo run: research, code, review and docs move at the same time.</p></div></li>
-            <li><span class="mono">03</span><div><b>Human in the loop</b><p>I set the goal, review every output and own what ships.</p></div></li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
     <!-- QUESTS -->
     <section class="section" id="quests">
       <header class="section__head" data-reveal>
-        <span class="section__idx mono">(03)</span>
+        <span class="section__idx mono">(02)</span>
         <h2>Quest log</h2>
       </header>
 
@@ -349,7 +289,7 @@
     <!-- PIPELINE -->
     <section class="section" id="pipeline">
       <header class="section__head" data-reveal>
-        <span class="section__idx mono">(04)</span>
+        <span class="section__idx mono">(03)</span>
         <h2>How I build</h2>
         <p class="section__sub">Configuration-driven pipelines on a medallion architecture — one config, many sources, governed end to end.</p>
       </header>
@@ -428,97 +368,10 @@
       </div>
     </section>
 
-    <!-- WORK -->
-    <section class="section section--flush" id="work">
-      <header class="section__head" data-reveal>
-        <span class="section__idx mono">(05)</span>
-        <h2>Projects</h2>
-        <div class="carousel-ctrl mono">
-          <span><b data-slide-now>01</b> / <span data-slide-total>08</span></span>
-          <button type="button" class="icon-btn" data-slide="-1" aria-label="Previous project">←</button>
-          <button type="button" class="icon-btn" data-slide="1" aria-label="Next project">→</button>
-        </div>
-      </header>
-
-      <div class="carousel" data-carousel data-cursor="Drag" tabindex="0" aria-label="Projects, scroll horizontally">
-        <article class="slide">
-          <div class="art" data-art="badminton"></div>
-          <div class="slide__cap">
-            <p><span class="mono">01</span> Tiger Badminton <em>Real-time booking PWA</em></p>
-            <p class="slide__links"><a href="https://tujiaqi2002.github.io/badminton/" target="_blank" rel="noopener">Live ↗</a><a href="https://github.com/tujiaqi2002/badminton" target="_blank" rel="noopener">Code ↗</a></p>
-            <p class="slide__meta">Live scheduling for five courts, Magic Link &amp; Google auth, owner dashboard with revenue overview.<br /><span class="mono">React · Vite · Supabase · PL/pgSQL</span></p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="art" data-art="teemo"></div>
-          <div class="slide__cap">
-            <p><span class="mono">02</span> Teemo <em>League of Legends stats</em></p>
-            <p class="slide__links"><a href="https://tujiaqi2002.github.io/Teemo/" target="_blank" rel="noopener">Live ↗</a><a href="https://github.com/tujiaqi2002/Teemo" target="_blank" rel="noopener">Code ↗</a></p>
-            <p class="slide__meta">Summoner search with ranked info and match history, pulled from the Riot Games API.<br /><span class="mono">JavaScript · Python · REST</span></p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="art" data-art="traffic"></div>
-          <div class="slide__cap">
-            <p><span class="mono">03</span> Traffic Light Optimizer <em>Simulation</em></p>
-            <p class="slide__links"><a href="https://github.com/tujiaqi2002/traffic_light_optimizer" target="_blank" rel="noopener">Code ↗</a></p>
-            <p class="slide__meta">An intersection simulator with a Python back end for experimenting with signal timing.<br /><span class="mono">Python · Jupyter</span></p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="art" data-art="klotski"></div>
-          <div class="slide__cap">
-            <p><span class="mono">04</span> Klotski · 华容道 <em>Puzzle game</em></p>
-            <p class="slide__links"><a href="https://github.com/tujiaqi2002/klotski_Hua-Rong-Dao" target="_blank" rel="noopener">Code ↗</a></p>
-            <p class="slide__meta">After writing an A* / DFS solver for CSC384, I built the playable web version I couldn't find online.<br /><span class="mono">JavaScript · Sass</span></p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="art" data-art="palette"></div>
-          <div class="slide__cap">
-            <p><span class="mono">05</span> 偏色 · Color Picker <em>Palette tool</em></p>
-            <p class="slide__links"><a href="https://tujiaqi2002.github.io/color_picker/" target="_blank" rel="noopener">Live ↗</a><a href="https://github.com/tujiaqi2002/color_picker" target="_blank" rel="noopener">Code ↗</a></p>
-            <p class="slide__meta">Pick a base color, a swatch count and a hue offset — get a palette. Zero build step.<br /><span class="mono">JavaScript · CSS</span></p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="art" data-art="g2048"></div>
-          <div class="slide__cap">
-            <p><span class="mono">06</span> 2048 <em>Arcade</em></p>
-            <p class="slide__links"><a href="https://tujiaqi2002.github.io/2048/" target="_blank" rel="noopener">Play ↗</a><a href="https://github.com/tujiaqi2002/2048" target="_blank" rel="noopener">Code ↗</a></p>
-            <p class="slide__meta">The classic sliding-tile game. See if you can get 2048.<br /><span class="mono">JavaScript · Sass</span></p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="art" data-art="snake"></div>
-          <div class="slide__cap">
-            <p><span class="mono">07</span> Snake <em>Arcade</em></p>
-            <p class="slide__links"><a href="https://tujiaqi2002.github.io/Snake/" target="_blank" rel="noopener">Play ↗</a><a href="https://github.com/tujiaqi2002/Snake" target="_blank" rel="noopener">Code ↗</a></p>
-            <p class="slide__meta">Canvas Snake in vanilla JS. Have fun.<br /><span class="mono">JavaScript · Canvas</span></p>
-          </div>
-        </article>
-
-        <article class="slide">
-          <div class="art" data-art="take"></div>
-          <div class="slide__cap">
-            <p><span class="mono">08</span> Take <em>2D shooter · Team of 3</em></p>
-            <p class="slide__links"><a href="https://github.com/tujiaqi2002/Take" target="_blank" rel="noopener">Code ↗</a></p>
-            <p class="slide__meta">biu! biu! biu! A browser shooter with its own entity &amp; collision system.<br /><span class="mono">JavaScript · Canvas</span></p>
-          </div>
-        </article>
-      </div>
-    </section>
-
     <!-- PHOTO MODE -->
     <section class="section" id="photos">
       <header class="section__head" data-reveal>
-        <span class="section__idx mono">(06)</span>
+        <span class="section__idx mono">(04)</span>
         <h2>Photo mode</h2>
         <p class="section__sub">Screenshots from off the clock.</p>
       </header>
@@ -568,9 +421,8 @@
     <span class="muted konami-hint">↑↑↓↓←→←→BA</span>
   </footer>
 
-  <script src="assets/js/landscape.js?v=202610151539" defer></script>
-  <script src="assets/js/art.js?v=202610151539" defer></script>
-  <script src="assets/js/main.js?v=202610151539" defer></script>
-  <script type="module" src="assets/js/pc.js?v=202610151539"></script>
+  <script src="assets/js/landscape.js?v=202610151558" defer></script>
+  <script src="assets/js/main.js?v=202610151558" defer></script>
+  <script type="module" src="assets/js/pc.js?v=202610151558"></script>
 </body>
 </html>
