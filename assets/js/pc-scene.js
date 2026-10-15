@@ -68,49 +68,49 @@ function noteTexture() {
   });
 }
 
-function introNoteTexture() {
-  const W = 1024, H = 1096;
+function cardTexture() {
+  const W = 1024, H = 1134;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d');
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   const SANS = '"Inter Tight", "Helvetica Neue", Arial, sans-serif';
-  const paras = [
-    "it looks like you've spawned in my corner of the internet.",
-    "I'm Jiaqi, a Toronto-based data engineer at 407 ETR, turning messy multi-source data into governed, analysis-ready data products on AWS & Databricks.",
-    "Whether you're hiring, building, or just wandered in — welcome."
-  ];
+  const MONO = '"JetBrains Mono", Menlo, monospace';
+  const P = 78;
   const draw = () => {
-    x.fillStyle = '#e8ff86'; x.fillRect(0, 0, W, H);
-    const g = x.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, 'rgba(255,255,255,0.06)'); g.addColorStop(1, 'rgba(0,0,0,0.09)');
-    x.fillStyle = g; x.fillRect(0, 0, W, H);
-    x.fillStyle = 'rgba(0,0,0,0.05)'; x.fillRect(0, 0, W, 96);
-    x.fillStyle = '#1d2410';
-    x.font = '500 78px ' + SANS;
-    x.fillText('Hi there,', 76, 200);
-    x.font = '400 46px ' + SANS;
-    const maxW = W - 152, lh = 62;
-    let y = 290;
-    paras.forEach((p) => {
-      let line = '';
-      p.split(' ').forEach((w) => {
-        const test = line ? line + ' ' + w : w;
-        if (x.measureText(test).width > maxW && line) { x.fillText(line, 76, y); y += lh; line = w; }
-        else line = test;
-      });
-      if (line) { x.fillText(line, 76, y); y += lh; }
-      y += 30;
+    x.fillStyle = '#f1ede3'; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#16190f';
+    x.font = '500 34px ' + MONO;
+    x.fillText('README.TXT', P, 104);
+    x.textAlign = 'right'; x.fillText('01 / 01', W - P, 104); x.textAlign = 'left';
+    x.fillRect(P, 132, W - 2 * P, 3);
+    x.fillStyle = '#c8ff2e'; x.fillRect(P, 186, 26, 26);
+    x.fillStyle = '#16190f';
+    x.font = '500 104px ' + SANS;
+    x.fillText('Hi there,', P, 300);
+    x.font = '400 54px ' + SANS;
+    let y = 386, line = '';
+    "it looks like you've spawned in my corner of the internet.".split(' ').forEach((w) => {
+      const t = line ? line + ' ' + w : w;
+      if (x.measureText(t).width > W - 2 * P && line) { x.fillText(line, P, y); y += 70; line = w; } else line = t;
     });
-    x.font = 'italic 500 46px ' + SANS;
-    x.textAlign = 'right';
-    x.fillText('— Jiaqi', W - 76, H - 80);
-    x.textAlign = 'left';
+    if (line) { x.fillText(line, P, y); y += 70; }
+    y += 34;
+    x.fillStyle = 'rgba(22,25,15,0.25)'; x.fillRect(P, y, W - 2 * P, 2);
+    y += 86;
+    x.font = '500 46px ' + MONO;
+    [['01', 'click the screen'], ['02', 'type  help'], ['03', 'esc to step back']].forEach((r) => {
+      x.fillStyle = 'rgba(22,25,15,0.45)'; x.fillText(r[0], P, y);
+      x.fillStyle = '#16190f'; x.fillText(r[1], P + 110, y);
+      y += 74;
+    });
+    x.font = 'italic 500 48px ' + SANS;
+    x.textAlign = 'right'; x.fillText('— Jiaqi', W - P, H - 70); x.textAlign = 'left';
     tex.needsUpdate = true;
   };
   draw();
   if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load('400 46px "Inter Tight"'), document.fonts.load('500 78px "Inter Tight"')]).then(draw).catch(() => {});
+    Promise.all([document.fonts.load('500 104px "Inter Tight"'), document.fonts.load('400 54px "Inter Tight"'), document.fonts.load('500 46px "JetBrains Mono"')]).then(draw).catch(() => {});
   }
   return tex;
 }
@@ -245,33 +245,11 @@ export function mountScene(stage, term, opts) {
 
   // Sticky note
   const note = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.17), new THREE.MeshStandardMaterial({ map: noteTexture(), roughness: 0.9 }));
-  note.position.set(-0.6, 1.08, FRONT + 0.062);
-  note.rotation.z = 0.12;
+  note.position.set(0.6, 1.08, FRONT + 0.062);
+  note.rotation.z = -0.14;
   note.castShadow = true;
   pc.add(note);
 
-  // Intro sticky note on the right edge of the bezel (not part of the clickable PC)
-  const NW = 0.56, NH = 0.6;
-  const ng = new THREE.PlaneGeometry(NW, NH, 12, 12);
-  const npos = ng.attributes.position;
-  for (let i = 0; i < npos.count; i++) {
-    const cy = Math.max(0, (-npos.getY(i) - NH * 0.1) / (NH * 0.4));
-    const cx = Math.max(0, (npos.getX(i) - NW * 0.1) / (NW * 0.4));
-    npos.setZ(i, 0.03 * cy * cy * (0.4 + 0.6 * cx));
-  }
-  ng.computeVertexNormals();
-  const noteTex = introNoteTexture();
-  const introNote = new THREE.Mesh(ng, new THREE.MeshStandardMaterial({
-    map: noteTex, emissiveMap: noteTex, emissive: 0xffffff, emissiveIntensity: 0.34, roughness: 0.9, side: THREE.DoubleSide
-  }));
-  introNote.position.set(0.5 + NW / 2, 0.68, 0.122);
-  introNote.rotation.set(0, -0.06, 0.035);
-  introNote.castShadow = true;
-  scene.add(introNote);
-  const tape = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.05), new THREE.MeshStandardMaterial({ color: 0xf4f1e8, transparent: true, opacity: 0.55, roughness: 0.6 }));
-  tape.position.set(0.53, 0.97, 0.127);
-  tape.rotation.z = 0.62;
-  scene.add(tape);
   const wideMQ = matchMedia('(min-width: 901px)');
 
   /* ---------- keyboard ---------- */
@@ -374,11 +352,11 @@ export function mountScene(stage, term, opts) {
 
   const mugMat = new THREE.MeshStandardMaterial({ color: 0xeee9de, roughness: 0.4 });
   const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.088, 0.21, 40), mugMat);
-  mug.position.set(1.28, 0.105, 0.42); mug.castShadow = true; mug.receiveShadow = true; scene.add(mug);
+  mug.position.set(1.6, 0.105, 0.66); mug.castShadow = true; mug.receiveShadow = true; scene.add(mug);
   const coffee = new THREE.Mesh(new THREE.CircleGeometry(0.086, 32), new THREE.MeshStandardMaterial({ color: 0x2a170c, roughness: 0.2 }));
-  coffee.rotation.x = -Math.PI / 2; coffee.position.set(1.28, 0.19, 0.42); scene.add(coffee);
+  coffee.rotation.x = -Math.PI / 2; coffee.position.set(1.6, 0.19, 0.66); scene.add(coffee);
   const handle = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.014, 12, 24, Math.PI), mugMat);
-  handle.position.set(1.375, 0.11, 0.42); handle.rotation.z = -Math.PI / 2; handle.castShadow = true; scene.add(handle);
+  handle.position.set(1.695, 0.11, 0.66); handle.rotation.z = -Math.PI / 2; handle.castShadow = true; scene.add(handle);
 
   const steamTex = glowTexture();
   const steam = [];
@@ -400,6 +378,24 @@ export function mountScene(stage, term, opts) {
   };
   floppy(0x1c1d1c, 1.0, 0.95, 0.32, 0xc8ff2e);
   floppy(0x4a5866, 1.06, 0.9, -0.12, 0xf1ece0).position.y = 0.019;
+
+  /* ---------- instruction card (folded tent card on the desk) ---------- */
+  const card = new THREE.Group();
+  const CW = 0.56, CH = 0.62, TILT = 0.24;
+  const cardTex = cardTexture();
+  const paper = new THREE.MeshStandardMaterial({ color: 0xe9e4d8, roughness: 0.9 });
+  const face = new THREE.MeshStandardMaterial({ map: cardTex, emissiveMap: cardTex, emissive: 0xffffff, emissiveIntensity: 0.3, roughness: 0.85 });
+  const panel = new THREE.BoxGeometry(CW, CH, 0.004);
+  const front = new THREE.Mesh(panel, [paper, paper, paper, paper, face, paper]);
+  front.position.set(0, (CH / 2) * Math.cos(TILT), (CH / 2) * Math.sin(TILT));
+  front.rotation.x = -TILT;
+  const back = new THREE.Mesh(panel, paper);
+  back.position.set(0, (CH / 2) * Math.cos(TILT), -(CH / 2) * Math.sin(TILT));
+  back.rotation.x = TILT;
+  [front, back].forEach((m) => { m.castShadow = true; m.receiveShadow = true; card.add(m); });
+  card.position.set(1.14, 0, 0.1);
+  card.rotation.y = -0.24;
+  scene.add(card);
 
   /* ---------- lights ---------- */
   const hemi = new THREE.HemisphereLight(0x9fb4c8, 0x2a2018, 0.35);
@@ -474,7 +470,7 @@ export function mountScene(stage, term, opts) {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
     aspect = w / h;
-    introNote.visible = tape.visible = wideMQ.matches;
+    card.visible = wideMQ.matches;
     renderer.setSize(w, h, false);
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
@@ -498,7 +494,7 @@ export function mountScene(stage, term, opts) {
     const r = el.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    return ray.intersectObject(pc, true).length > 0;
+    return ray.intersectObjects([pc, card], true).length > 0;
   }
   el.addEventListener('click', (e) => { if (hitPC(e) && opts.onActivate) opts.onActivate(); });
   let hoverTick = 0;
@@ -541,7 +537,7 @@ export function mountScene(stage, term, opts) {
 
     steam.forEach((s) => {
       const ph = (t * 0.22 + s.userData.phase) % 1;
-      s.position.set(1.28 + Math.sin(ph * 6 + s.userData.phase * 9) * 0.03, 0.22 + ph * 0.45, 0.42);
+      s.position.set(1.6 + Math.sin(ph * 6 + s.userData.phase * 9) * 0.03, 0.22 + ph * 0.45, 0.66);
       s.scale.setScalar(0.08 + ph * 0.18);
       s.material.opacity = reduce ? 0 : Math.sin(ph * Math.PI) * 0.09;
     });

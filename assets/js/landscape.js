@@ -13,10 +13,10 @@
     fps: document.querySelector('[data-hud="fps"]')
   };
 
-  var TRAIL_FADE = 0.4;      // trail intensity lost per second (~2.5s fade)
-  var WAVE_SPEED = 0.2;      // grid widths per second
-  var WAVE_WIDTH = 0.07;     // gaussian width, in grid widths
-  var WAVE_LIFE = 5.5;       // seconds
+  var TRAIL_FADE = 1.25;     // trail intensity lost per second (~0.8s fade)
+  var WAVE_SPEED = 0.5;      // grid widths per second
+  var WAVE_WIDTH = 0.08;     // gaussian width, in grid widths
+  var WAVE_LIFE = 3;         // seconds
   var WAVE_AMP = 0.42;
 
   var W = 0, H = 0, dpr = 1, N = 24, tw = 40, th = 20, ox = 0, oy = 0, maxH = 80;
@@ -64,9 +64,9 @@
   function field(i, j, t) {
     var x = i / N, y = j / N;
     return 0.42
-      + 0.22 * Math.sin((x * 2.6 + t * 0.12) * Math.PI) * Math.cos((y * 2.1 - t * 0.09) * Math.PI)
-      + 0.1 * Math.sin((x + y) * 9 + t * 0.5)
-      + 0.06 * Math.cos((x - y) * 13 - t * 0.35);
+      + 0.22 * Math.sin((x * 2.6 + t * 0.3) * Math.PI) * Math.cos((y * 2.1 - t * 0.22) * Math.PI)
+      + 0.1 * Math.sin((x + y) * 9 + t * 1.1)
+      + 0.06 * Math.cos((x - y) * 13 - t * 0.8);
   }
 
   function project(i, j) {
@@ -122,11 +122,11 @@
           var age = (now - rp.t) / 1000;
           var dist = Math.hypot(i - rp.i, j - rp.j) / N;
           var x = (dist - age * WAVE_SPEED) / WAVE_WIDTH;
-          var env = smoothstep(0, 0.4, age) * Math.pow(Math.max(0, 1 - age / WAVE_LIFE), 2);
+          var env = smoothstep(0, 0.2, age) * Math.pow(Math.max(0, 1 - age / WAVE_LIFE), 2);
           waveV += WAVE_AMP * Math.exp(-0.5 * x * x) * env;
         }
         v = Math.max(0.04, v + waveV);
-        heights[k] += (v - heights[k]) * (reduce ? 1 : 0.1);
+        heights[k] += (v - heights[k]) * (reduce ? 1 : 0.22);
         var h = 2 + heights[k] * maxH;
         var ty = by - h;
         tops[k * 2] = bx; tops[k * 2 + 1] = ty;
