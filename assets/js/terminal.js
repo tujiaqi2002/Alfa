@@ -120,6 +120,8 @@ export function createTerminal() {
     }
     return wrapped;
   }
+  function inputRows() { return wrap([{ t: PROMPT, c: 'acc' }, { t: input, c: 'ink' }]); }
+  function maxScroll() { return Math.max(0, allRows().length - Math.max(1, rows - inputRows().length)); }
 
   /* ---------- render ---------- */
   function dirty() {
@@ -143,10 +145,9 @@ export function createTerminal() {
     ctx.font = FONT; ctx.textBaseline = 'top';
     ctx.shadowBlur = 9;
     const all = allRows();
-    const inRows = wrap([{ t: PROMPT, c: 'acc' }, { t: input, c: 'ink' }]);
+    const inRows = inputRows();
     const avail = Math.max(1, rows - inRows.length);
-    const maxScroll = Math.max(0, all.length - avail);
-    scroll = Math.max(0, Math.min(scroll, maxScroll));
+    scroll = Math.max(0, Math.min(scroll, maxScroll()));
     const start = Math.max(0, all.length - avail - scroll);
     let y = PAD_Y;
     all.slice(start, start + avail).forEach((r) => { drawRow(r, y); y += LH; });
@@ -475,7 +476,13 @@ export function createTerminal() {
     });
   }
 
-  function scrollBy(n) { scroll += n; dirty(); }
+  // Returns false when already at the end, so callers can let the page scroll instead
+  function scrollBy(n) {
+    const next = Math.max(0, Math.min(scroll + n, maxScroll()));
+    if (next === scroll) return false;
+    scroll = next; dirty();
+    return true;
+  }
   function setLive(el) { live = el; }
 
   document.addEventListener('jt:theme', () => { palette = readPalette(); dirty(); });

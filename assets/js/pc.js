@@ -24,14 +24,32 @@ function init(stage, createTerminal) {
   const want3d = webglAvailable();
   if (want3d) document.documentElement.classList.add('has-pc3d');
   const focused = () => document.activeElement === input;
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  // Bring the whole console into view so a zoomed-in screen is never half off the page
+  let autoScroll = false, autoT = 0;
+  function centerStage() {
+    const r = stage.getBoundingClientRect();
+    if (Math.abs(r.top + r.height / 2 - innerHeight / 2) < 24) return;
+    autoScroll = true;
+    clearTimeout(autoT);
+    autoT = setTimeout(() => { autoScroll = false; }, 1600);
+    stage.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+  }
+  addEventListener('scrollend', () => { autoScroll = false; });
 
   function activate() {
     input.focus({ preventScroll: true });
+    centerStage();
     ensurePower();
   }
 
   const HINTS = { wide: 'Click the screen to type', screen: 'Esc to step back', note: 'Click or Esc to step back' };
   function showHint(v) { if (hint) hint.textContent = HINTS[v] || HINTS.wide; }
+  function onView(v) {
+    showHint(v);
+    if (v === 'note') centerStage();
+  }
 
   input.addEventListener('focus', () => {
     stage.classList.add('is-active');
@@ -61,7 +79,7 @@ function init(stage, createTerminal) {
     if (!want3d) { flat(); return (loadP = Promise.resolve()); }
     loadP = import('./pc-scene.js' + VER)
       .then((m) => {
-        scene = m.mountScene(stage, term, { reduce, onActivate: activate, onView: showHint });
+        scene = m.mountScene(stage, term, { reduce, onActivate: activate, onView });
         stage.classList.add('is-ready');
         if (focused()) scene.setZoom(true);
       })
@@ -90,13 +108,12 @@ function init(stage, createTerminal) {
 
   stage.addEventListener('wheel', (e) => {
     if (!focused()) return;
-    e.preventDefault();
-    term.scrollBy(e.deltaY > 0 ? -3 : 3);
+    // Scroll the terminal history; once it hits either end, let the page scroll as usual
+    if (term.scrollBy(e.deltaY > 0 ? -3 : 3)) e.preventDefault();
   }, { passive: false });
 
   function goTo() {
     activate();
-    stage.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
   }
   addEventListener('keydown', (e) => {
     const t = e.target;
@@ -108,6 +125,13 @@ function init(stage, createTerminal) {
   if ('IntersectionObserver' in window) {
     new IntersectionObserver((en) => { if (en[0].isIntersecting) ensureScene(); }, { rootMargin: '700px 0px' }).observe(stage);
     new IntersectionObserver((en) => { if (en[0].isIntersecting) ensurePower(); }, { threshold: 0.45 }).observe(stage);
+    // Scrolling the console mostly out of view steps back out of the screen / note zoom.
+    // Touch devices are skipped: the on-screen keyboard shrinks the viewport while typing.
+    new IntersectionObserver((en) => {
+      if (autoScroll || en[0].intersectionRatio >= 0.5) return;
+      if (focused() && finePointer) input.blur();
+      if (scene) scene.stepBack();
+    }, { threshold: [0, 0.25, 0.5] }).observe(stage);
   } else {
     ensurePower();
   }

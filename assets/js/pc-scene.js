@@ -591,7 +591,6 @@ export function mountScene(stage, term, opts) {
   let visible = false;
   new IntersectionObserver((en) => {
     visible = en[0].isIntersecting;
-    if (!visible && view === 'note') setView('wide');
     visible && !document.hidden ? start() : stop();
   }, { rootMargin: '100px' }).observe(stage);
   document.addEventListener('visibilitychange', () => { document.hidden ? stop() : (visible && start()); });
@@ -599,6 +598,7 @@ export function mountScene(stage, term, opts) {
 
   return {
     setZoom(z) { if (z) setView('screen'); else if (view === 'screen') setView('wide'); },
+    stepBack() { if (view === 'note') setView('wide'); },
     renderOnce() { if (!running) frame(performance.now()); }
   };
 }
