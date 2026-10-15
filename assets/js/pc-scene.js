@@ -59,12 +59,10 @@ function noteTexture() {
     x.fillStyle = '#e8ff86'; x.fillRect(0, 0, w, h);
     x.fillStyle = 'rgba(0,0,0,0.06)'; x.fillRect(0, 0, w, 34);
     x.fillStyle = '#1d2410';
-    x.font = 'italic 500 40px "Inter Tight", "Helvetica Neue", Arial, sans-serif';
-    x.fillText('type', 30, 100);
-    x.font = '600 46px "JetBrains Mono", Menlo, monospace';
-    x.fillText('help', 30, 160);
-    x.font = 'italic 400 26px "Inter Tight", Arial, sans-serif';
-    x.fillText('or: agents :)', 30, 214);
+    x.font = 'italic 500 42px "Inter Tight", "Helvetica Neue", Arial, sans-serif';
+    x.fillText('type', 30, 118);
+    x.font = '600 54px "JetBrains Mono", Menlo, monospace';
+    x.fillText('help', 30, 190);
   });
 }
 

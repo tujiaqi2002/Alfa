@@ -7,7 +7,7 @@ Personal website of **Jiaqi Tu**, Data Engineer in Toronto — amplified by a pe
 A minimal, editorial layout with a data / AI / gamer layer:
 
 - Interactive isometric “data landscape” hero (canvas) with a HUD
-- **Console:** a 3D retro PC on a desk (Three.js) whose CRT runs a live, interactive terminal — click the screen or press <kbd>~</kbd>. The intro is a sticky note lying on the desk in the lamp light; click it to zoom in and read
+- **Console:** a 3D retro PC on a desk (Three.js) whose CRT runs a live, interactive terminal with a small read-only filesystem (`ls`, `cd`, `cat`, `tree`, `grep`, `man` …) — click the screen or press <kbd>~</kbd>. The intro is a sticky note lying on the desk in the lamp light; click it to zoom in and read
 - Player card with photo, live XP, stats and a skills loadout
 - Quest-log career timeline
 - Medallion pipeline diagram (Bronze → Silver → Gold) with a simulated run log
