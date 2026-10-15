@@ -13,14 +13,20 @@
     fps: document.querySelector('[data-hud="fps"]')
   };
 
-  var W = 0, H = 0, dpr = 1, N = 22, tw = 40, th = 20, ox = 0, oy = 0, maxH = 80;
-  var heights = new Float32Array(0);
-  var mouse = { x: -9999, y: -9999, inside: false };
+  var TRAIL_FADE = 0.4;      // trail intensity lost per second (~2.5s fade)
+  var WAVE_SPEED = 0.2;      // grid widths per second
+  var WAVE_WIDTH = 0.07;     // gaussian width, in grid widths
+  var WAVE_LIFE = 5.5;       // seconds
+  var WAVE_AMP = 0.42;
+
+  var W = 0, H = 0, dpr = 1, N = 24, tw = 40, th = 20, ox = 0, oy = 0, maxH = 80;
+  var heights = new Float32Array(0), trail = new Float32Array(0), tops = new Float32Array(0);
+  var mouse = { x: 0, y: 0, inside: false };
   var ripples = [];
   var colors = {};
   var running = false, visible = true, rafId = 0;
   var t0 = performance.now(), last = t0, frames = 0, fpsT = t0;
-  var hovered = -1;
+  var hovered = -1, prevCell = -1;
 
   function readColors() {
     var cs = getComputedStyle(document.body);
@@ -40,46 +46,67 @@
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    N = W < 600 ? 14 : W < 1000 ? 18 : 24;
-    tw = Math.max(26, (W * (W < 600 ? 1.6 : 1.02)) / N);
+    N = W < 600 ? 28 : W < 1000 ? 40 : 54;
+    tw = (W * (W < 600 ? 1.6 : 1.02)) / N;
     th = tw / 2;
-    maxH = Math.min(H * 0.26, tw * 2.6);
+    maxH = Math.min(H * 0.2, N * tw * 0.11);
     ox = W / 2;
     oy = H * 0.5 - (N * th) / 2 + maxH * 0.35;
-    if (heights.length !== N * N) heights = new Float32Array(N * N);
+    if (heights.length !== N * N) {
+      heights = new Float32Array(N * N);
+      trail = new Float32Array(N * N);
+      tops = new Float32Array(N * N * 2);
+      hovered = prevCell = -1;
+    }
     if (!running) draw(performance.now());
   }
 
   function field(i, j, t) {
     var x = i / N, y = j / N;
-    var v = 0.42
-      + 0.22 * Math.sin((x * 2.6 + t * 0.18) * Math.PI) * Math.cos((y * 2.1 - t * 0.13) * Math.PI)
-      + 0.12 * Math.sin((x + y) * 9 + t * 0.7)
-      + 0.08 * Math.cos((x - y) * 13 - t * 0.5);
-    return v;
+    return 0.42
+      + 0.22 * Math.sin((x * 2.6 + t * 0.12) * Math.PI) * Math.cos((y * 2.1 - t * 0.09) * Math.PI)
+      + 0.1 * Math.sin((x + y) * 9 + t * 0.5)
+      + 0.06 * Math.cos((x - y) * 13 - t * 0.35);
   }
 
   function project(i, j) {
     return [ox + (i - j) * tw / 2, oy + (i + j) * th / 2];
   }
 
+  // Light every cell on the grid line between two cells so fast moves leave a continuous trail
+  function paintLine(a, b) {
+    var ai = Math.floor(a / N), aj = a % N, bi = Math.floor(b / N), bj = b % N;
+    var steps = Math.max(Math.abs(bi - ai), Math.abs(bj - aj));
+    for (var s = 0; s <= steps; s++) {
+      var f = steps ? s / steps : 0;
+      var i = Math.round(ai + (bi - ai) * f), j = Math.round(aj + (bj - aj) * f);
+      trail[i * N + j] = 1;
+    }
+  }
+
+  function pickCell(mx, my) {
+    // Nearest top-face centre (uses last frame's tops; front-most wins ties)
+    var best = -1, bestD = (tw * 0.55) * (tw * 0.55);
+    for (var k = 0; k < N * N; k++) {
+      var dx = tops[k * 2] - mx, dy = (tops[k * 2 + 1] - my) * 2;
+      var d = dx * dx + dy * dy;
+      if (d <= bestD) { bestD = d; best = k; }
+    }
+    return best;
+  }
+
+  function smoothstep(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+
   function draw(now) {
     var t = (now - t0) / 1000;
+    var dt = Math.min(0.05, (now - last) / 1000);
     ctx.clearRect(0, 0, W, H);
 
     var arcade = document.body.classList.contains('arcade');
-    var gap = 0.8;
+    var gap = 0.86;
     var hw = (tw / 2) * gap, hh = (th / 2) * gap;
-    var sigma = tw * 2.4;
-
-    // Autopilot cursor for touch / idle so the world still breathes
-    var mx = mouse.x, my = mouse.y;
-    if (!mouse.inside) {
-      mx = W / 2 + Math.cos(t * 0.45) * W * 0.28;
-      my = H * 0.52 + Math.sin(t * 0.7) * H * 0.12;
-    }
-
-    var bestD = Infinity, best = -1;
+    var fade = TRAIL_FADE * dt;
+    var lw = tw < 24 ? 0.6 : 1;
 
     for (var s = 0; s <= 2 * (N - 1); s++) {
       for (var i = Math.max(0, s - N + 1); i <= Math.min(s, N - 1); i++) {
@@ -89,35 +116,24 @@
         var bx = p[0], by = p[1];
 
         var v = field(i, j, reduce ? 0 : t);
-
-        var dx = bx - mx, dy = (by - my) * 1.6;
-        var d2 = dx * dx + dy * dy;
-        v += 0.55 * Math.exp(-d2 / (2 * sigma * sigma));
-
+        var waveV = 0;
         for (var r = 0; r < ripples.length; r++) {
           var rp = ripples[r];
           var age = (now - rp.t) / 1000;
-          var dist = Math.hypot(i - rp.i, j - rp.j);
-          var front = age * 9;
-          var w = Math.exp(-Math.pow(dist - front, 2) / 2.2) * Math.max(0, 1 - age / 2.2);
-          v += 0.6 * w;
+          var dist = Math.hypot(i - rp.i, j - rp.j) / N;
+          var x = (dist - age * WAVE_SPEED) / WAVE_WIDTH;
+          var env = smoothstep(0, 0.4, age) * Math.pow(Math.max(0, 1 - age / WAVE_LIFE), 2);
+          waveV += WAVE_AMP * Math.exp(-0.5 * x * x) * env;
         }
-
-        v = Math.max(0.04, v);
-        heights[k] += (v - heights[k]) * (reduce ? 1 : 0.18);
-        var hv = heights[k];
-        var h = 3 + hv * maxH;
-
+        v = Math.max(0.04, v + waveV);
+        heights[k] += (v - heights[k]) * (reduce ? 1 : 0.1);
+        var h = 2 + heights[k] * maxH;
         var ty = by - h;
+        tops[k * 2] = bx; tops[k * 2 + 1] = ty;
 
-        if (mouse.inside) {
-          var ddx = bx - mouse.x, ddy = ty - mouse.y;
-          var dd = ddx * ddx + ddy * ddy;
-          if (dd < bestD && dd < tw * tw) { bestD = dd; best = k; }
-        }
-
-        var hot = hv > 0.92;
+        if (trail[k] > 0) trail[k] = Math.max(0, trail[k] - fade);
         var isHover = k === hovered;
+        var tint = Math.max(trail[k], Math.min(1, waveV * 1.2));
 
         // Left face
         ctx.beginPath();
@@ -139,7 +155,7 @@
         ctx.fillStyle = colors.right;
         ctx.fill();
         ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = lw;
         ctx.stroke();
 
         // Top face
@@ -150,15 +166,13 @@
         ctx.lineTo(bx - hw, ty);
         ctx.closePath();
         if (arcade) {
-          ctx.fillStyle = 'hsl(' + ((i * 9 + j * 6 + t * 40) % 360) + ',90%,' + (hot ? 62 : 22 + hv * 22) + '%)';
+          ctx.fillStyle = 'hsl(' + ((i * 5 + j * 3 + t * 30) % 360) + ',90%,' + (22 + heights[k] * 22 + tint * 30) + '%)';
           ctx.fill();
         } else {
-          ctx.fillStyle = isHover ? colors.accent : colors.top;
+          ctx.fillStyle = colors.top;
           ctx.fill();
-          // Glow ramps in smoothly with height instead of a hard threshold
-          var glow = Math.min(1, Math.max(0, (hv - 0.78) / 0.42));
-          if (glow > 0 && !isHover) {
-            ctx.globalAlpha = glow * glow * 0.95;
+          if (isHover || tint > 0.01) {
+            ctx.globalAlpha = isHover ? 1 : tint * tint * 0.95;
             ctx.fillStyle = colors.accent;
             ctx.fill();
             ctx.globalAlpha = 1;
@@ -169,17 +183,13 @@
       }
     }
 
-    hovered = best;
-    if (hud.cell) {
-      if (best >= 0) {
-        var bi = Math.floor(best / N), bj = best % N;
-        hud.cell.textContent = pad2(bi) + '·' + pad2(bj);
-        hud.val.textContent = heights[best].toFixed(3);
-      }
+    if (hud.cell && hovered >= 0) {
+      hud.cell.textContent = pad2(Math.floor(hovered / N)) + '·' + pad2(hovered % N);
+      hud.val.textContent = heights[hovered].toFixed(3);
     }
 
-    // Prune ripples
-    ripples = ripples.filter(function (rp) { return now - rp.t < 2400; });
+    ripples = ripples.filter(function (rp) { return now - rp.t < WAVE_LIFE * 1000; });
+    last = now;
   }
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -192,14 +202,13 @@
       if (hud.fps) hud.fps.textContent = Math.round((frames * 1000) / (now - fpsT));
       frames = 0; fpsT = now;
     }
-    last = now;
     rafId = requestAnimationFrame(loop);
   }
 
   function start() {
     if (running || reduce || !visible || document.hidden) return;
     running = true;
-    fpsT = performance.now(); frames = 0;
+    last = fpsT = performance.now(); frames = 0;
     rafId = requestAnimationFrame(loop);
   }
   function stop() { running = false; cancelAnimationFrame(rafId); }
@@ -207,17 +216,26 @@
   canvas.addEventListener('pointermove', function (e) {
     var r = canvas.getBoundingClientRect();
     mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.inside = true;
-    if (reduce) draw(performance.now());
+    var c = pickCell(mouse.x, mouse.y);
+    if (c >= 0) {
+      if (prevCell >= 0) paintLine(prevCell, c); else trail[c] = 1;
+      prevCell = c;
+    }
+    hovered = c;
+    if (!running) draw(performance.now());
   });
-  canvas.addEventListener('pointerleave', function () { mouse.inside = false; hovered = -1; });
+  canvas.addEventListener('pointerleave', function () { mouse.inside = false; hovered = -1; prevCell = -1; });
   canvas.addEventListener('pointerdown', function (e) {
     var r = canvas.getBoundingClientRect();
     var x = e.clientX - r.left, y = e.clientY - r.top;
-    // Inverse iso projection (ground plane, nudged up for column height)
-    var a = (x - ox) / (tw / 2), b = (y + maxH * 0.4 - oy) / (th / 2);
-    var i = (a + b) / 2, j = (b - a) / 2;
+    var c = pickCell(x, y), i, j;
+    if (c >= 0) { i = Math.floor(c / N); j = c % N; }
+    else {
+      var a = (x - ox) / (tw / 2), b = (y + maxH * 0.4 - oy) / (th / 2);
+      i = (a + b) / 2; j = (b - a) / 2;
+    }
     ripples.push({ i: i, j: j, t: performance.now() });
-    if (ripples.length > 6) ripples.shift();
+    if (ripples.length > 5) ripples.shift();
   });
 
   if ('IntersectionObserver' in window) {
