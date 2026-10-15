@@ -284,7 +284,7 @@
     } else run();
   }
 
-  /* ---------------- Toast & achievements ---------------- */
+  /* ---------------- Toast ---------------- */
   var toastEl = $('.toast'), toastTimer;
   function toast(icon, title, sub) {
     if (!toastEl) return;
@@ -298,46 +298,6 @@
     toastEl.classList.add('is-on');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.classList.remove('is-on'); }, 3600);
-  }
-
-  function getUnlocked() {
-    try { return JSON.parse(store('jt-ach') || '[]'); } catch (e) { return []; }
-  }
-  function renderAch(id, fresh) {
-    var el = $('[data-ach="' + id + '"]');
-    if (!el) return;
-    var b = $('b', el), s = $('small', el);
-    el.classList.add('is-on');
-    if (b && b.dataset.name) b.textContent = b.dataset.name;
-    if (s && s.dataset.hint) s.textContent = s.dataset.hint;
-    if (fresh) { el.classList.remove('just-unlocked'); void el.offsetWidth; el.classList.add('just-unlocked'); }
-  }
-  function updateAchCount() {
-    var c = $('[data-ach-count]'), t = $('[data-ach-total]');
-    if (c) c.textContent = $$('.ach.is-on').length;
-    if (t) t.textContent = $$('.ach').length;
-  }
-  function unlock(id) {
-    var list = getUnlocked();
-    if (list.indexOf(id) !== -1) return;
-    list.push(id);
-    store('jt-ach', JSON.stringify(list));
-    renderAch(id, true);
-    updateAchCount();
-    var el = $('[data-ach="' + id + '"]');
-    var name = el ? ($('b', el).dataset.name || id) : id;
-    toast('★', name, 'Achievement unlocked');
-  }
-  function initAchievements() {
-    getUnlocked().forEach(function (id) { renderAch(id, false); });
-    updateAchCount();
-    var end = $('[data-end-sentinel]');
-    if (end && 'IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (en) {
-        if (en[0].isIntersecting) { unlock('explorer'); io.disconnect(); }
-      });
-      io.observe(end);
-    }
   }
 
   /* ---------------- Arcade mode (Konami) ---------------- */
@@ -356,7 +316,6 @@
         pos = 0;
         var on = !body.classList.contains('arcade');
         setArcade(on);
-        unlock('konami');
         if (on) toast('▲', 'Arcade mode on', 'Konami code accepted');
       }
     });
@@ -388,7 +347,7 @@
     }
 
     var SKILLS = [
-      ['cloud', 'AWS (S3, Glue, Redshift, Lambda, Step Functions, +10)'],
+      ['cloud', 'AWS — 20+ services (S3, Glue, Redshift, Lambda, Step Functions, …)'],
       ['cloud', 'Databricks'],
       ['language', 'Python'], ['language', 'PySpark'], ['language', 'SQL'],
       ['language', 'Bash'], ['language', 'C++'], ['language', 'C'],
@@ -513,9 +472,9 @@
         print('<span class="t-acc">jiaqi.os</span> v2026.10 — tty1\n<span class="t-dim">type \'help\' to see what you can do. esc to close.</span>');
       }
       setTimeout(function () { input.focus(); }, 30);
-      unlock('console');
     }
     function close() {
+      input.blur();
       term.hidden = true;
       body.style.overflow = '';
       if (lastFocus && lastFocus.focus) lastFocus.focus();
@@ -561,7 +520,6 @@
   initGitHub();
   initCarousel();
   initLog();
-  initAchievements();
   initKonami();
   initTerminal();
   initCursor();
