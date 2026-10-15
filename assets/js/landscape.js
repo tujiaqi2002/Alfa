@@ -27,6 +27,7 @@
   var running = false, visible = true, rafId = 0;
   var t0 = performance.now(), last = t0, frames = 0, fpsT = t0;
   var hovered = -1, prevCell = -1;
+  var rowK = new Int32Array(0), rowBX = new Float32Array(0), rowBY = new Float32Array(0), rowTY = new Float32Array(0), rowTint = new Float32Array(0);
 
   function readColors() {
     var cs = getComputedStyle(document.body);
@@ -56,6 +57,7 @@
       heights = new Float32Array(N * N);
       trail = new Float32Array(N * N);
       tops = new Float32Array(N * N * 2);
+      rowK = new Int32Array(N); rowBX = new Float32Array(N); rowBY = new Float32Array(N); rowTY = new Float32Array(N); rowTint = new Float32Array(N);
       hovered = prevCell = -1;
     }
     if (!running) draw(performance.now());
@@ -67,10 +69,6 @@
       + 0.22 * Math.sin((x * 2.6 + t * 0.3) * Math.PI) * Math.cos((y * 2.1 - t * 0.22) * Math.PI)
       + 0.1 * Math.sin((x + y) * 9 + t * 1.1)
       + 0.06 * Math.cos((x - y) * 13 - t * 0.8);
-  }
-
-  function project(i, j) {
-    return [ox + (i - j) * tw / 2, oy + (i + j) * th / 2];
   }
 
   // Light every cell on the grid line between two cells so fast moves leave a continuous trail
@@ -95,6 +93,10 @@
     return best;
   }
 
+  function topPath(bx, ty, hw, hh) {
+    ctx.moveTo(bx, ty - hh); ctx.lineTo(bx + hw, ty); ctx.lineTo(bx, ty + hh); ctx.lineTo(bx - hw, ty); ctx.closePath();
+  }
+
   function smoothstep(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
 
   function draw(now) {
@@ -108,12 +110,14 @@
     var fade = TRAIL_FADE * dt;
     var lw = tw < 24 ? 0.6 : 1;
 
+    // Columns on the same diagonal never overlap, so each diagonal is drawn as
+    // one batched path per face type (back-to-front across diagonals).
     for (var s = 0; s <= 2 * (N - 1); s++) {
-      for (var i = Math.max(0, s - N + 1); i <= Math.min(s, N - 1); i++) {
+      var i0 = Math.max(0, s - N + 1), i1 = Math.min(s, N - 1), n = 0;
+      for (var i = i0; i <= i1; i++) {
         var j = s - i;
         var k = i * N + j;
-        var p = project(i, j);
-        var bx = p[0], by = p[1];
+        var bx = ox + (i - j) * tw / 2, by = oy + (i + j) * th / 2;
 
         var v = field(i, j, reduce ? 0 : t);
         var waveV = 0;
@@ -127,59 +131,50 @@
         }
         v = Math.max(0.04, v + waveV);
         heights[k] += (v - heights[k]) * (reduce ? 1 : 0.22);
-        var h = 2 + heights[k] * maxH;
-        var ty = by - h;
+        var ty = by - (2 + heights[k] * maxH);
         tops[k * 2] = bx; tops[k * 2 + 1] = ty;
-
         if (trail[k] > 0) trail[k] = Math.max(0, trail[k] - fade);
-        var isHover = k === hovered;
-        var tint = Math.max(trail[k], Math.min(1, waveV * 1.2));
 
-        // Left face
-        ctx.beginPath();
-        ctx.moveTo(bx - hw, ty);
-        ctx.lineTo(bx, ty + hh);
-        ctx.lineTo(bx, by + hh);
-        ctx.lineTo(bx - hw, by);
-        ctx.closePath();
-        ctx.fillStyle = colors.left;
-        ctx.fill();
+        rowK[n] = k; rowBX[n] = bx; rowBY[n] = by; rowTY[n] = ty;
+        rowTint[n] = Math.max(trail[k], Math.min(1, waveV * 1.2));
+        n++;
+      }
 
-        // Right face
-        ctx.beginPath();
-        ctx.moveTo(bx + hw, ty);
-        ctx.lineTo(bx, ty + hh);
-        ctx.lineTo(bx, by + hh);
-        ctx.lineTo(bx + hw, by);
-        ctx.closePath();
-        ctx.fillStyle = colors.right;
-        ctx.fill();
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = lw;
-        ctx.stroke();
+      var m;
+      ctx.beginPath();
+      for (m = 0; m < n; m++) {
+        ctx.moveTo(rowBX[m] - hw, rowTY[m]); ctx.lineTo(rowBX[m], rowTY[m] + hh);
+        ctx.lineTo(rowBX[m], rowBY[m] + hh); ctx.lineTo(rowBX[m] - hw, rowBY[m]); ctx.closePath();
+      }
+      ctx.fillStyle = colors.left; ctx.fill();
 
-        // Top face
-        ctx.beginPath();
-        ctx.moveTo(bx, ty - hh);
-        ctx.lineTo(bx + hw, ty);
-        ctx.lineTo(bx, ty + hh);
-        ctx.lineTo(bx - hw, ty);
-        ctx.closePath();
+      ctx.beginPath();
+      for (m = 0; m < n; m++) {
+        ctx.moveTo(rowBX[m] + hw, rowTY[m]); ctx.lineTo(rowBX[m], rowTY[m] + hh);
+        ctx.lineTo(rowBX[m], rowBY[m] + hh); ctx.lineTo(rowBX[m] + hw, rowBY[m]); ctx.closePath();
+      }
+      ctx.fillStyle = colors.right; ctx.fill();
+      ctx.strokeStyle = colors.stroke; ctx.lineWidth = lw; ctx.stroke();
+
+      ctx.beginPath();
+      for (m = 0; m < n; m++) topPath(rowBX[m], rowTY[m], hw, hh);
+      ctx.fillStyle = colors.top; ctx.fill();
+      ctx.stroke();
+
+      for (m = 0; m < n; m++) {
+        var kk = rowK[m], tint = rowTint[m], hov = kk === hovered;
         if (arcade) {
-          ctx.fillStyle = 'hsl(' + ((i * 5 + j * 3 + t * 30) % 360) + ',90%,' + (22 + heights[k] * 22 + tint * 30) + '%)';
+          var ci = Math.floor(kk / N), cj = kk % N;
+          ctx.beginPath(); topPath(rowBX[m], rowTY[m], hw, hh);
+          ctx.fillStyle = 'hsl(' + ((ci * 5 + cj * 3 + t * 30) % 360) + ',90%,' + (22 + heights[kk] * 22 + tint * 30) + '%)';
           ctx.fill();
-        } else {
-          ctx.fillStyle = colors.top;
-          ctx.fill();
-          if (isHover || tint > 0.01) {
-            ctx.globalAlpha = isHover ? 1 : tint * tint * 0.95;
-            ctx.fillStyle = colors.accent;
-            ctx.fill();
-            ctx.globalAlpha = 1;
-          }
+        } else if (hov || tint > 0.01) {
+          ctx.beginPath(); topPath(rowBX[m], rowTY[m], hw, hh);
+          ctx.globalAlpha = hov ? 1 : tint * tint * 0.95;
+          ctx.fillStyle = colors.accent; ctx.fill();
+          ctx.globalAlpha = 1;
         }
-        ctx.strokeStyle = isHover ? colors.ink : colors.stroke;
-        ctx.stroke();
+        if (hov) { ctx.strokeStyle = colors.ink; ctx.stroke(); ctx.strokeStyle = colors.stroke; }
       }
     }
 

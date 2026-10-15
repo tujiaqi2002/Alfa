@@ -381,7 +381,7 @@ export function mountScene(stage, term, opts) {
 
   /* ---------- instruction card (folded tent card on the desk) ---------- */
   const card = new THREE.Group();
-  const CW = 0.56, CH = 0.62, TILT = 0.24;
+  const CW = 0.48, CH = 0.53, TILT = 0.22;
   const cardTex = cardTexture();
   const paper = new THREE.MeshStandardMaterial({ color: 0xe9e4d8, roughness: 0.9 });
   const face = new THREE.MeshStandardMaterial({ map: cardTex, emissiveMap: cardTex, emissive: 0xffffff, emissiveIntensity: 0.3, roughness: 0.85 });
@@ -393,8 +393,8 @@ export function mountScene(stage, term, opts) {
   back.position.set(0, (CH / 2) * Math.cos(TILT), -(CH / 2) * Math.sin(TILT));
   back.rotation.x = TILT;
   [front, back].forEach((m) => { m.castShadow = true; m.receiveShadow = true; card.add(m); });
-  card.position.set(1.14, 0, 0.1);
-  card.rotation.y = -0.24;
+  card.position.set(1.0, 0, -0.12);
+  card.rotation.y = -0.3;
   scene.add(card);
 
   /* ---------- lights ---------- */
@@ -448,7 +448,7 @@ export function mountScene(stage, term, opts) {
 
   function goals() {
     const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2;
-    const dWide = Math.max(3.55, 2.15 / (t * aspect));
+    const dWide = Math.max(3.55, (card.visible ? 2.6 : 2.15) / (t * aspect));
     const dZoom = Math.max(1.72, 1.2 / (t * aspect));
     let scrollP = 0;
     if (!reduce) {

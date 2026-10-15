@@ -1,8 +1,9 @@
 /* Console section: wires the terminal to the 3D desk scene (or a flat CRT fallback). */
-import { createTerminal } from './terminal.js';
 
+// Forward this module's ?v= cache-buster to the modules it loads
+const VER = new URL(import.meta.url).search;
 const stage = document.querySelector('[data-pc]');
-if (stage) init(stage);
+if (stage) import('./terminal.js' + VER).then((m) => init(stage, m.createTerminal));
 
 function webglAvailable() {
   try {
@@ -11,7 +12,7 @@ function webglAvailable() {
   } catch (e) { return false; }
 }
 
-function init(stage) {
+function init(stage, createTerminal) {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const input = stage.querySelector('[data-pc-input]');
   const hint = stage.querySelector('[data-pc-hint]');
@@ -55,7 +56,7 @@ function init(stage) {
   function ensureScene() {
     if (loadP) return loadP;
     if (!want3d) { flat(); return (loadP = Promise.resolve()); }
-    loadP = import('./pc-scene.js')
+    loadP = import('./pc-scene.js' + VER)
       .then((m) => {
         scene = m.mountScene(stage, term, { reduce, onActivate: activate });
         stage.classList.add('is-ready');
