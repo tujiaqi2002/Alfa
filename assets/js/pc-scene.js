@@ -68,6 +68,53 @@ function noteTexture() {
   });
 }
 
+function introNoteTexture() {
+  const W = 1024, H = 1096;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const SANS = '"Inter Tight", "Helvetica Neue", Arial, sans-serif';
+  const paras = [
+    "it looks like you've spawned in my corner of the internet.",
+    "I'm Jiaqi, a Toronto-based data engineer at 407 ETR, turning messy multi-source data into governed, analysis-ready data products on AWS & Databricks.",
+    "Whether you're hiring, building, or just wandered in — welcome."
+  ];
+  const draw = () => {
+    x.fillStyle = '#e8ff86'; x.fillRect(0, 0, W, H);
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, 'rgba(255,255,255,0.06)'); g.addColorStop(1, 'rgba(0,0,0,0.09)');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.fillStyle = 'rgba(0,0,0,0.05)'; x.fillRect(0, 0, W, 96);
+    x.fillStyle = '#1d2410';
+    x.font = '500 78px ' + SANS;
+    x.fillText('Hi there,', 76, 200);
+    x.font = '400 46px ' + SANS;
+    const maxW = W - 152, lh = 62;
+    let y = 290;
+    paras.forEach((p) => {
+      let line = '';
+      p.split(' ').forEach((w) => {
+        const test = line ? line + ' ' + w : w;
+        if (x.measureText(test).width > maxW && line) { x.fillText(line, 76, y); y += lh; line = w; }
+        else line = test;
+      });
+      if (line) { x.fillText(line, 76, y); y += lh; }
+      y += 30;
+    });
+    x.font = 'italic 500 46px ' + SANS;
+    x.textAlign = 'right';
+    x.fillText('— Jiaqi', W - 76, H - 80);
+    x.textAlign = 'left';
+    tex.needsUpdate = true;
+  };
+  draw();
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load('400 46px "Inter Tight"'), document.fonts.load('500 78px "Inter Tight"')]).then(draw).catch(() => {});
+  }
+  return tex;
+}
+
 function rod(a, b, r, mat) {
   const dir = new V3().subVectors(b, a);
   const len = dir.length();
@@ -198,10 +245,34 @@ export function mountScene(stage, term, opts) {
 
   // Sticky note
   const note = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.17), new THREE.MeshStandardMaterial({ map: noteTexture(), roughness: 0.9 }));
-  note.position.set(0.6, 1.08, FRONT + 0.062);
-  note.rotation.z = -0.14;
+  note.position.set(-0.6, 1.08, FRONT + 0.062);
+  note.rotation.z = 0.12;
   note.castShadow = true;
   pc.add(note);
+
+  // Intro sticky note on the right edge of the bezel (not part of the clickable PC)
+  const NW = 0.56, NH = 0.6;
+  const ng = new THREE.PlaneGeometry(NW, NH, 12, 12);
+  const npos = ng.attributes.position;
+  for (let i = 0; i < npos.count; i++) {
+    const cy = Math.max(0, (-npos.getY(i) - NH * 0.1) / (NH * 0.4));
+    const cx = Math.max(0, (npos.getX(i) - NW * 0.1) / (NW * 0.4));
+    npos.setZ(i, 0.03 * cy * cy * (0.4 + 0.6 * cx));
+  }
+  ng.computeVertexNormals();
+  const noteTex = introNoteTexture();
+  const introNote = new THREE.Mesh(ng, new THREE.MeshStandardMaterial({
+    map: noteTex, emissiveMap: noteTex, emissive: 0xffffff, emissiveIntensity: 0.34, roughness: 0.9, side: THREE.DoubleSide
+  }));
+  introNote.position.set(0.5 + NW / 2, 0.68, 0.122);
+  introNote.rotation.set(0, -0.06, 0.035);
+  introNote.castShadow = true;
+  scene.add(introNote);
+  const tape = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.05), new THREE.MeshStandardMaterial({ color: 0xf4f1e8, transparent: true, opacity: 0.55, roughness: 0.6 }));
+  tape.position.set(0.53, 0.97, 0.127);
+  tape.rotation.z = 0.62;
+  scene.add(tape);
+  const wideMQ = matchMedia('(min-width: 901px)');
 
   /* ---------- keyboard ---------- */
   const kb = new THREE.Group();
@@ -403,6 +474,7 @@ export function mountScene(stage, term, opts) {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
     aspect = w / h;
+    introNote.visible = tape.visible = wideMQ.matches;
     renderer.setSize(w, h, false);
     camera.aspect = aspect;
     camera.updateProjectionMatrix();

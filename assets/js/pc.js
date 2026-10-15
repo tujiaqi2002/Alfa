@@ -20,6 +20,8 @@ function init(stage) {
   term.setLive(stage.querySelector('[data-pc-live]'));
 
   let scene = null, loadP = null, powerP = null;
+  const want3d = webglAvailable();
+  if (want3d) document.documentElement.classList.add('has-pc3d');
   const focused = () => document.activeElement === input;
 
   function activate() {
@@ -40,6 +42,7 @@ function init(stage) {
   term.on('exit', () => input.blur());
 
   function flat() {
+    document.documentElement.classList.remove('has-pc3d');
     stage.classList.add('pc--flat', 'is-ready');
     const frame = document.createElement('div');
     frame.className = 'pc__flat';
@@ -51,7 +54,7 @@ function init(stage) {
 
   function ensureScene() {
     if (loadP) return loadP;
-    if (!webglAvailable()) { flat(); return (loadP = Promise.resolve()); }
+    if (!want3d) { flat(); return (loadP = Promise.resolve()); }
     loadP = import('./pc-scene.js')
       .then((m) => {
         scene = m.mountScene(stage, term, { reduce, onActivate: activate });
