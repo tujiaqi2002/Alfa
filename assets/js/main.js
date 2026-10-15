@@ -166,6 +166,12 @@
       c.classList.toggle('is-hidden', !!(e.target.closest && e.target.closest('#landscape')));
     }, { passive: true });
     document.addEventListener('mouseleave', function () { c.classList.add('is-hidden'); });
+    // Lets canvas scenes refresh the label when it changes without a pointer move
+    document.addEventListener('jt:cursor', function (e) {
+      var txt = e.detail || '';
+      if (txt) { label.textContent = txt; c.classList.add('has-label'); }
+      else c.classList.remove('has-label');
+    });
     (function loop() {
       cx += (x - cx) * 0.22; cy += (y - cy) * 0.22;
       c.style.transform = 'translate3d(' + cx + 'px,' + cy + 'px,0)';

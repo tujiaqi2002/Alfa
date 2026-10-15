@@ -68,49 +68,52 @@ function noteTexture() {
   });
 }
 
-function cardTexture() {
-  const W = 1024, H = 1134;
+/* Big sticky note carrying the intro paragraph (read from the page so copy lives in one place). */
+function stickyTexture(body) {
+  const W = 1024, H = 1024;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d');
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   const SANS = '"Inter Tight", "Helvetica Neue", Arial, sans-serif';
   const MONO = '"JetBrains Mono", Menlo, monospace';
-  const P = 78;
-  const draw = () => {
-    x.fillStyle = '#f1ede3'; x.fillRect(0, 0, W, H);
-    x.fillStyle = '#16190f';
-    x.font = '500 34px ' + MONO;
-    x.fillText('README.TXT', P, 104);
-    x.textAlign = 'right'; x.fillText('01 / 01', W - P, 104); x.textAlign = 'left';
-    x.fillRect(P, 132, W - 2 * P, 3);
-    x.fillStyle = '#c8ff2e'; x.fillRect(P, 186, 26, 26);
-    x.fillStyle = '#16190f';
-    x.font = '500 104px ' + SANS;
-    x.fillText('Hi there,', P, 300);
-    x.font = '400 54px ' + SANS;
-    let y = 386, line = '';
-    "it looks like you've spawned in my corner of the internet.".split(' ').forEach((w) => {
+  const INK = '#1d2410', P = 76, MAXW = W - 2 * P;
+  const wrap = (text, y, lh) => {
+    let line = '';
+    text.split(/\s+/).forEach((w) => {
       const t = line ? line + ' ' + w : w;
-      if (x.measureText(t).width > W - 2 * P && line) { x.fillText(line, P, y); y += 70; line = w; } else line = t;
+      if (x.measureText(t).width > MAXW && line) { x.fillText(line, P, y); y += lh; line = w; } else line = t;
     });
-    if (line) { x.fillText(line, P, y); y += 70; }
-    y += 34;
-    x.fillStyle = 'rgba(22,25,15,0.25)'; x.fillRect(P, y, W - 2 * P, 2);
-    y += 86;
-    x.font = '500 46px ' + MONO;
-    [['01', 'click the screen'], ['02', 'type  help'], ['03', 'esc to step back']].forEach((r) => {
-      x.fillStyle = 'rgba(22,25,15,0.45)'; x.fillText(r[0], P, y);
-      x.fillStyle = '#16190f'; x.fillText(r[1], P + 110, y);
-      y += 74;
-    });
-    x.font = 'italic 500 48px ' + SANS;
-    x.textAlign = 'right'; x.fillText('— Jiaqi', W - P, H - 70); x.textAlign = 'left';
+    if (line) { x.fillText(line, P, y); y += lh; }
+    return y;
+  };
+  const draw = () => {
+    x.fillStyle = '#e8ff86'; x.fillRect(0, 0, W, H);
+    x.fillStyle = 'rgba(0,0,0,0.05)'; x.fillRect(0, 0, W, 120);
+    const g = x.createLinearGradient(0, H - 160, 0, H);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.07)');
+    x.fillStyle = g; x.fillRect(0, H - 160, W, 160);
+    x.fillStyle = INK;
+    x.font = '500 30px ' + MONO;
+    x.fillText('README.TXT', P, 78);
+    x.textAlign = 'right'; x.fillText('jiaqi.os', W - P, 78); x.textAlign = 'left';
+    x.font = '500 96px ' + SANS;
+    x.fillText('Hi there,', P, 232);
+    x.font = '400 41px ' + SANS;
+    let y = wrap("it looks like you've spawned in my corner of the internet.", 302, 54);
+    y = wrap(body, y + 22, 54);
+    x.fillStyle = 'rgba(29,36,16,0.28)'; x.fillRect(P, y + 4, MAXW, 2);
+    x.fillStyle = 'rgba(29,36,16,0.6)';
+    x.font = '500 30px ' + MONO;
+    x.fillText('click the screen \u2192 type help', P, y + 66);
+    x.fillStyle = INK;
+    x.font = 'italic 500 46px ' + SANS;
+    x.textAlign = 'right'; x.fillText('\u2014 Jiaqi', W - P, H - 64); x.textAlign = 'left';
     tex.needsUpdate = true;
   };
   draw();
   if (document.fonts && document.fonts.load) {
-    Promise.all([document.fonts.load('500 104px "Inter Tight"'), document.fonts.load('400 54px "Inter Tight"'), document.fonts.load('500 46px "JetBrains Mono"')]).then(draw).catch(() => {});
+    Promise.all([document.fonts.load('500 96px "Inter Tight"'), document.fonts.load('400 41px "Inter Tight"'), document.fonts.load('500 30px "JetBrains Mono"')]).then(draw).catch(() => {});
   }
   return tex;
 }
@@ -379,23 +382,26 @@ export function mountScene(stage, term, opts) {
   floppy(0x1c1d1c, 1.0, 0.95, 0.32, 0xc8ff2e);
   floppy(0x4a5866, 1.06, 0.9, -0.12, 0xf1ece0).position.y = 0.019;
 
-  /* ---------- instruction card (folded tent card on the desk) ---------- */
-  const card = new THREE.Group();
-  const CW = 0.48, CH = 0.53, TILT = 0.22;
-  const cardTex = cardTexture();
-  const paper = new THREE.MeshStandardMaterial({ color: 0xe9e4d8, roughness: 0.9 });
-  const face = new THREE.MeshStandardMaterial({ map: cardTex, emissiveMap: cardTex, emissive: 0xffffff, emissiveIntensity: 0.3, roughness: 0.85 });
-  const panel = new THREE.BoxGeometry(CW, CH, 0.004);
-  const front = new THREE.Mesh(panel, [paper, paper, paper, paper, face, paper]);
-  front.position.set(0, (CH / 2) * Math.cos(TILT), (CH / 2) * Math.sin(TILT));
-  front.rotation.x = -TILT;
-  const back = new THREE.Mesh(panel, paper);
-  back.position.set(0, (CH / 2) * Math.cos(TILT), -(CH / 2) * Math.sin(TILT));
-  back.rotation.x = TILT;
-  [front, back].forEach((m) => { m.castShadow = true; m.receiveShadow = true; card.add(m); });
-  card.position.set(1.0, 0, -0.12);
-  card.rotation.y = -0.3;
-  scene.add(card);
+  /* ---------- intro sticky note on the left edge of the CRT (click to read) ---------- */
+  const SW = 0.44, SH = 0.44;
+  const stickyGeo = new THREE.PlaneGeometry(SW, SH, 1, 16);
+  const sgp = stickyGeo.attributes.position;
+  for (let i = 0; i < sgp.count; i++) {
+    const free = 1 - (sgp.getY(i) + SH / 2) / SH; // 0 at the glue strip, 1 at the loose bottom edge
+    sgp.setZ(i, 0.04 * Math.pow(free, 2.4));
+  }
+  stickyGeo.computeVertexNormals();
+  const introEl = document.querySelector('.intro__me');
+  const stickyTex = stickyTexture(introEl ? introEl.textContent.trim().replace(/\s+/g, ' ') : '');
+  stickyTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const sticky = new THREE.Mesh(stickyGeo, new THREE.MeshStandardMaterial({
+    map: stickyTex, emissiveMap: stickyTex, emissive: 0xffffff, emissiveIntensity: 0.32, roughness: 0.9
+  }));
+  sticky.position.set(-0.72, 0.84, FRONT + 0.064);
+  sticky.rotation.z = 0.05;
+  sticky.receiveShadow = true;
+  scene.add(sticky);
+  const stickyLook = new V3(-0.72, 0.84, FRONT + 0.075);
 
   /* ---------- lights ---------- */
   const hemi = new THREE.HemisphereLight(0x9fb4c8, 0x2a2018, 0.35);
@@ -444,20 +450,25 @@ export function mountScene(stage, term, opts) {
   const wideDir = new V3(0.12, 0.2, 1).normalize();
   const camPos = new V3(), camLook = new V3();
   const goalPos = new V3(), goalLook = new V3();
-  let zoomed = false, pointer = { x: 0, y: 0 }, aspect = 1, first = true;
+  let view = 'wide', pointer = { x: 0, y: 0 }, aspect = 1, first = true;
 
   function goals() {
     const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2;
-    const dWide = Math.max(3.55, (card.visible ? 2.6 : 2.15) / (t * aspect));
+    const dWide = Math.max(3.55, (sticky.visible ? 2.5 : 2.15) / (t * aspect));
     const dZoom = Math.max(1.72, 1.2 / (t * aspect));
     let scrollP = 0;
     if (!reduce) {
       const r = stage.getBoundingClientRect();
       scrollP = Math.max(-1, Math.min(1, (r.top + r.height / 2 - innerHeight / 2) / innerHeight));
     }
-    if (zoomed) {
+    if (view === 'screen') {
       goalLook.copy(lookZoom);
       goalPos.set(pointer.x * 0.06, SCR_Y + pointer.y * 0.03, FRONT + dZoom);
+    } else if (view === 'note') {
+      // Keep the note inside the unmasked middle band of the stage
+      const dNote = Math.max((SH * 1.55) / t, (SW * 1.55) / (t * aspect));
+      goalLook.copy(stickyLook);
+      goalPos.set(stickyLook.x + pointer.x * 0.04, stickyLook.y + 0.14 + pointer.y * 0.02, stickyLook.z + dNote);
     } else {
       goalLook.copy(look);
       if (aspect < 1) goalLook.y -= 0.45 * (1 - aspect);
@@ -466,11 +477,22 @@ export function mountScene(stage, term, opts) {
     }
   }
 
+  function setView(v) {
+    if (v === view) return;
+    view = v;
+    const label = v === 'note' ? 'Back' : '';
+    if (label) stage.setAttribute('data-cursor', label); else stage.removeAttribute('data-cursor');
+    document.dispatchEvent(new CustomEvent('jt:cursor', { detail: label }));
+    if (opts.onView) opts.onView(v);
+    if (!running) frame(performance.now());
+  }
+
   function resize() {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
     aspect = w / h;
-    card.visible = wideMQ.matches;
+    sticky.visible = wideMQ.matches;
+    if (!sticky.visible && view === 'note') setView('wide');
     renderer.setSize(w, h, false);
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
@@ -490,19 +512,28 @@ export function mountScene(stage, term, opts) {
 
   /* ---------- picking ---------- */
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-  function hitPC(e) {
+  function pick(e) {
     const r = el.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    return ray.intersectObjects([pc, card], true).length > 0;
+    const hits = ray.intersectObjects(sticky.visible ? [pc, sticky] : [pc], true);
+    if (!hits.length) return null;
+    return hits[0].object === sticky ? 'note' : 'pc';
   }
-  el.addEventListener('click', (e) => { if (hitPC(e) && opts.onActivate) opts.onActivate(); });
+  el.addEventListener('click', (e) => {
+    const hit = pick(e);
+    if (hit === 'pc') { if (opts.onActivate) opts.onActivate(); }
+    else if (hit === 'note') setView(view === 'note' ? 'wide' : 'note');
+    else if (view === 'note') setView('wide');
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && view === 'note') setView('wide'); });
   let hoverTick = 0;
   el.addEventListener('pointermove', (e) => {
     if (++hoverTick % 3) return;
-    const hit = hitPC(e);
-    el.style.cursor = hit ? 'pointer' : '';
-    if (hit && !zoomed) stage.setAttribute('data-cursor', 'Type'); else stage.removeAttribute('data-cursor');
+    const hit = pick(e);
+    el.style.cursor = hit || view === 'note' ? 'pointer' : '';
+    const label = view === 'screen' ? '' : hit === 'pc' ? 'Type' : view === 'note' ? 'Back' : hit === 'note' ? 'Read' : '';
+    if (label) stage.setAttribute('data-cursor', label); else stage.removeAttribute('data-cursor');
   });
 
   /* ---------- loop ---------- */
@@ -551,13 +582,14 @@ export function mountScene(stage, term, opts) {
   let visible = false;
   new IntersectionObserver((en) => {
     visible = en[0].isIntersecting;
+    if (!visible && view === 'note') setView('wide');
     visible && !document.hidden ? start() : stop();
   }, { rootMargin: '100px' }).observe(stage);
   document.addEventListener('visibilitychange', () => { document.hidden ? stop() : (visible && start()); });
   frame(performance.now());
 
   return {
-    setZoom(z) { zoomed = !!z; if (zoomed) stage.removeAttribute('data-cursor'); if (!running) frame(performance.now()); },
+    setZoom(z) { if (z) setView('screen'); else if (view === 'screen') setView('wide'); },
     renderOnce() { if (!running) frame(performance.now()); }
   };
 }
