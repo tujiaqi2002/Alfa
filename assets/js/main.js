@@ -7,13 +7,6 @@
   var $ = function (s, c) { return (c || document).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
 
-  var LINKS = {
-    email: 'mailto:321756623tu@gmail.com',
-    phone: 'tel:+16044046680',
-    linkedin: 'https://www.linkedin.com/in/jiaqitu/',
-    github: 'https://github.com/tujiaqi2002',
-    resume: 'assets/Jiaqi_Tu_Resume.pdf'
-  };
   var CAREER_START = new Date('2023-05-01T00:00:00-04:00');
 
   function store(key, val) {
@@ -170,7 +163,7 @@
       var txt = t && !link ? t.getAttribute('data-cursor') : '';
       if (txt) { label.textContent = txt; c.classList.add('has-label'); }
       else c.classList.remove('has-label');
-      c.classList.toggle('is-hidden', !!(e.target.closest && e.target.closest('#landscape, .term')));
+      c.classList.toggle('is-hidden', !!(e.target.closest && e.target.closest('#landscape')));
     }, { passive: true });
     document.addEventListener('mouseleave', function () { c.classList.add('is-hidden'); });
     (function loop() {
@@ -325,182 +318,6 @@
     return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
   }
 
-  /* ---------------- Terminal ---------------- */
-  function initTerminal() {
-    var term = $('.term'), out = $('[data-term-out]'), form = $('[data-term-form]'), input = $('[data-term-input]');
-    if (!term) return;
-    var hist = [], hi = 0, lastFocus = null, greeted = false;
-
-    function print(html, cls) {
-      var div = document.createElement('div');
-      if (cls) div.className = cls;
-      div.innerHTML = html;
-      out.appendChild(div);
-      out.scrollTop = out.scrollHeight;
-    }
-    function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-    function table(cols, rows) {
-      var w = cols.map(function (c, i) { return Math.max(c.length, Math.max.apply(null, rows.map(function (r) { return String(r[i]).length; }))); });
-      var line = '+' + w.map(function (n) { return '-'.repeat(n + 2); }).join('+') + '+';
-      var row = function (r) { return '| ' + r.map(function (v, i) { return String(v).padEnd(w[i]); }).join(' | ') + ' |'; };
-      return [line, row(cols), line].concat(rows.map(row), [line]).join('\n');
-    }
-
-    var SKILLS = [
-      ['cloud', 'AWS — 20+ services (S3, Glue, Redshift, Lambda, Step Functions, …)'],
-      ['cloud', 'Databricks'],
-      ['language', 'Python'], ['language', 'PySpark'], ['language', 'SQL'],
-      ['language', 'Bash'], ['language', 'C++'], ['language', 'C'],
-      ['data_eng', 'ETL/ELT · SCD 1/2 · MDM · Customer 360'],
-      ['database', 'Redshift · SQL Server · PostgreSQL · DynamoDB'],
-      ['delivery', 'Git · Jenkins · CI/CD · REST APIs']
-    ];
-    var PROJECTS = {
-      badminton: 'https://tujiaqi2002.github.io/badminton/',
-      teemo: 'https://tujiaqi2002.github.io/Teemo/',
-      traffic: 'https://github.com/tujiaqi2002/traffic_light_optimizer',
-      klotski: 'https://github.com/tujiaqi2002/klotski_Hua-Rong-Dao',
-      colors: 'https://tujiaqi2002.github.io/color_picker/',
-      '2048': 'https://tujiaqi2002.github.io/2048/',
-      snake: 'https://tujiaqi2002.github.io/Snake/',
-      take: 'https://github.com/tujiaqi2002/Take'
-    };
-
-    var cmds = {
-      help: function () {
-        print([
-          '<span class="t-acc">available commands</span>',
-          '  whoami            who is this guy',
-          '  about             short bio',
-          '  skills            loadout (or try: SELECT * FROM skills;)',
-          '  quests            work & education',
-          '  projects          list projects',
-          '  open &lt;project&gt;    launch a project',
-          '  contact           ways to reach me',
-          '  resume            open resume.pdf',
-          '  theme [dark|light]',
-          '  arcade            toggle arcade mode',
-          '  clear · exit'
-        ].join('\n'));
-      },
-      whoami: function () { print('jiaqi tu — data engineer @ 407 ETR · toronto, on'); },
-      about: function () {
-        print('Data engineer with 3+ years designing, building and supporting enterprise data platforms on AWS & Databricks.\nConfiguration-driven ETL, multi-source ingestion, Customer 360, MDM, SCD, data quality & performance tuning\nwith Python, PySpark and SQL. BASc, University of Toronto (Software Eng., Minor AI).');
-      },
-      ls: function () { print('about.txt  skills.sql  quests.log  <span class="t-acc">projects/</span>  resume.pdf'); },
-      cat: function (a) {
-        if (a[0] === 'about.txt') return cmds.about();
-        if (a[0] === 'skills.sql') return print('SELECT * FROM skills;  <span class="t-dim">-- try running it</span>');
-        if (a[0] === 'quests.log') return cmds.quests();
-        print('cat: ' + esc(a[0] || '') + ': No such file', 't-err');
-      },
-      skills: function () { cmds.select(['*', 'from', 'skills']); },
-      select: function (a) {
-        var q = a.join(' ').toLowerCase().replace(/;$/, '');
-        if (!/from\s+skills/.test(q)) return print('ERROR: relation does not exist. hint: SELECT * FROM skills;', 't-err');
-        var rows = SKILLS.slice();
-        var m = q.match(/where\s+category\s*=\s*'?(\w+)'?/);
-        if (m) rows = rows.filter(function (r) { return r[0] === m[1]; });
-        print(esc(table(['category', 'skill'], rows)) + '\n<span class="t-dim">(' + rows.length + ' rows)</span>');
-      },
-      quests: function () {
-        print(esc(table(['status', 'quest', 'when'], [
-          ['IN PROGRESS', 'Data Engineer · 407 ETR', 'May 2023 – now'],
-          ['CLEARED', 'BASc · University of Toronto', '2021 – 2025'],
-          ['CLEARED', 'Academic Tutor · Easy Group', 'Jul – Dec 2022']
-        ])));
-      },
-      projects: function () {
-        print(Object.keys(PROJECTS).map(function (k) { return '  <span class="t-acc">' + k.padEnd(10) + '</span> ' + PROJECTS[k]; }).join('\n') + '\n<span class="t-dim">usage: open &lt;project&gt;</span>');
-      },
-      open: function (a) {
-        var k = (a[0] || '').toLowerCase();
-        var url = PROJECTS[k] || LINKS[k];
-        if (!url) return print('open: unknown target "' + esc(k) + '". try: projects', 't-err');
-        print('launching ' + esc(k) + ' …');
-        if (url.indexOf('http') === 0) window.open(url, '_blank', 'noopener');
-        else location.href = url;
-      },
-      contact: function () {
-        print([
-          'email     <a href="' + LINKS.email + '">321756623tu@gmail.com</a>',
-          'phone     <a href="' + LINKS.phone + '">+1 604-404-6680</a>',
-          'linkedin  <a href="' + LINKS.linkedin + '" target="_blank" rel="noopener">in/jiaqitu</a>',
-          'github    <a href="' + LINKS.github + '" target="_blank" rel="noopener">@tujiaqi2002</a>'
-        ].join('\n'));
-      },
-      resume: function () { print('opening resume.pdf …'); window.open(LINKS.resume, '_blank', 'noopener'); },
-      theme: function (a) {
-        var t = a[0] === 'light' || a[0] === 'dark' ? a[0] : (root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-        setTheme(t); print('theme → ' + t);
-      },
-      arcade: function () {
-        var on = !body.classList.contains('arcade');
-        setArcade(on); print('arcade mode ' + (on ? 'ON' : 'OFF'));
-      },
-      sudo: function (a) {
-        if (/hire/.test(a.join(' '))) {
-          print('[sudo] password for guest: ********\n<span class="t-acc">permission granted.</span> drafting an email to jiaqi …');
-          setTimeout(function () { location.href = LINKS.email + '?subject=' + encodeURIComponent("Let's build something data-driven"); }, 900);
-        } else print('guest is not in the sudoers file. this incident will be reported. (try: sudo hire-me)', 't-err');
-      },
-      clear: function () { out.innerHTML = ''; },
-      exit: function () { close(); }
-    };
-    cmds.experience = cmds.quests;
-    cmds.work = cmds.projects;
-
-    function run(raw) {
-      var line = raw.trim();
-      print('<span class="t-acc">guest@jiaqi-tu:~$</span> ' + esc(line));
-      if (!line) return;
-      hist.push(line); hi = hist.length;
-      var parts = line.split(/\s+/);
-      var name = parts[0].toLowerCase();
-      var fn = cmds[name];
-      if (fn) fn(parts.slice(1));
-      else print('command not found: ' + esc(parts[0]) + ". type 'help'", 't-err');
-    }
-
-    function open() {
-      if (!term.hidden) return;
-      lastFocus = document.activeElement;
-      term.hidden = false;
-      body.style.overflow = 'hidden';
-      if (!greeted) {
-        greeted = true;
-        print('<span class="t-acc">jiaqi.os</span> v2026.10 — tty1\n<span class="t-dim">type \'help\' to see what you can do. esc to close.</span>');
-      }
-      setTimeout(function () { input.focus(); }, 30);
-    }
-    function close() {
-      input.blur();
-      term.hidden = true;
-      body.style.overflow = '';
-      if (lastFocus && lastFocus.focus) lastFocus.focus();
-    }
-
-    form.addEventListener('submit', function (e) { e.preventDefault(); run(input.value); input.value = ''; });
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowUp') { e.preventDefault(); if (hi > 0) input.value = hist[--hi]; }
-      if (e.key === 'ArrowDown') { e.preventDefault(); hi = Math.min(hist.length, hi + 1); input.value = hist[hi] || ''; }
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        var v = input.value.toLowerCase();
-        var hit = Object.keys(cmds).filter(function (c) { return c.indexOf(v) === 0; });
-        if (hit.length === 1) input.value = hit[0] + ' ';
-      }
-    });
-    $$('[data-term-open]').forEach(function (b) { b.addEventListener('click', open); });
-    $$('[data-term-close]').forEach(function (b) { b.addEventListener('click', close); });
-    term.addEventListener('click', function (e) { if (e.target === term) close(); });
-    addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !term.hidden) { e.preventDefault(); close(); return; }
-      if (isTyping(e)) return;
-      if (e.key === '`' || e.key === '~') { e.preventDefault(); term.hidden ? open() : close(); }
-    });
-  }
-
   /* ---------------- Clock & year ---------------- */
   function initClock() {
     var el = $('[data-clock]'), yr = $('[data-year]');
@@ -514,6 +331,9 @@
     tick(); setInterval(tick, 1000);
   }
 
+  /* ---------------- Shared API (used by the console module) ---------------- */
+  window.JT = { setTheme: setTheme, setArcade: setArcade, toast: toast };
+
   /* ---------------- Init ---------------- */
   initClock();
   initXP();
@@ -521,7 +341,6 @@
   initCarousel();
   initLog();
   initKonami();
-  initTerminal();
   initCursor();
   initNav();
   boot(function () {

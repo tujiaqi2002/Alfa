@@ -213,4 +213,43 @@
     if (!fn) return;
     el.innerHTML = '<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">' + fn() + '</svg>';
   });
+
+  /* AI agent network diagram */
+  var net = document.querySelector('[data-ai-net]');
+  if (net) {
+    var cx = 300, cy = 300, RA = 168, RP = 262;
+    var agents = ['Research', 'Code', 'Review', 'Data', 'Docs'];
+    var providers = ['Copilot', 'Codex', 'LLM', 'LLM', 'LLM'];
+    var pt = function (r, deg) { var a = (deg - 90) * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; };
+    var o = '';
+    o += '<circle cx="' + cx + '" cy="' + cy + '" r="' + RA + '" class="ring"/>';
+    o += '<circle cx="' + cx + '" cy="' + cy + '" r="' + RP + '" class="ring ring--outer"/>';
+    providers.forEach(function (p, i) {
+      var pp = pt(RP, i * 72 + 36);
+      [i, (i + 1) % 5].forEach(function (j) {
+        var ap = pt(RA, j * 72);
+        o += '<line x1="' + ap[0].toFixed(1) + '" y1="' + ap[1].toFixed(1) + '" x2="' + pp[0].toFixed(1) + '" y2="' + pp[1].toFixed(1) + '" class="link link--faint"/>';
+      });
+    });
+    agents.forEach(function (a, i) {
+      var ap = pt(RA, i * 72);
+      o += '<line x1="' + cx + '" y1="' + cy + '" x2="' + ap[0].toFixed(1) + '" y2="' + ap[1].toFixed(1) + '" class="link"/>';
+      o += '<line x1="' + cx + '" y1="' + cy + '" x2="' + ap[0].toFixed(1) + '" y2="' + ap[1].toFixed(1) + '" class="flow" style="animation-delay:' + (-i * 0.37).toFixed(2) + 's"/>';
+    });
+    providers.forEach(function (p, i) {
+      var pp = pt(RP, i * 72 + 36), w = p.length * 8.5 + 22;
+      o += '<g class="prov"><rect x="' + (pp[0] - w / 2).toFixed(1) + '" y="' + (pp[1] - 13) + '" width="' + w.toFixed(1) + '" height="26" rx="13"/>' +
+        '<text x="' + pp[0].toFixed(1) + '" y="' + (pp[1] + 4) + '" text-anchor="middle">' + p + '</text></g>';
+    });
+    agents.forEach(function (a, i) {
+      var ap = pt(RA, i * 72);
+      o += '<g class="agent" style="animation-delay:' + (i * 0.6) + 's"><circle cx="' + ap[0].toFixed(1) + '" cy="' + ap[1].toFixed(1) + '" r="38"/>' +
+        '<text x="' + ap[0].toFixed(1) + '" y="' + (ap[1] + 4).toFixed(1) + '" text-anchor="middle">' + a + '</text></g>';
+    });
+    o += '<circle cx="' + cx + '" cy="' + cy + '" r="64" class="pulse"/>';
+    o += '<g class="core"><circle cx="' + cx + '" cy="' + cy + '" r="58"/>' +
+      '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" class="core__name">JT</text>' +
+      '<text x="' + cx + '" y="' + (cy + 24) + '" text-anchor="middle" class="core__role">orchestrator</text></g>';
+    net.innerHTML = '<svg viewBox="0 0 600 600" role="img" aria-label="Diagram: Jiaqi as orchestrator at the centre, connected to research, code, review, data and docs agents, which draw on multiple AI providers including GitHub Copilot and OpenAI Codex.">' + o + '</svg>';
+  }
 })();
