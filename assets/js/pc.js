@@ -90,9 +90,16 @@ function init(stage, createTerminal) {
     return loadP;
   }
 
+  // The console is the first screen: hold the CRT power-on until the boot loader has cleared
+  const booted = new Promise((res) => {
+    if (document.documentElement.classList.contains('is-booted') || !document.getElementById('loader')) return res();
+    document.addEventListener('jt:booted', res, { once: true });
+    setTimeout(res, 4000);
+  });
+
   function ensurePower() {
     if (powerP) return powerP;
-    powerP = ensureScene()
+    powerP = Promise.all([ensureScene(), booted])
       .then(() => term.powerOn())
       .then(() => { if (!reduce && !focused()) term.demo(['whoami', 'agents']); });
     return powerP;

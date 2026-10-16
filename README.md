@@ -6,8 +6,7 @@ Personal website of **Jiaqi Tu**, Data Engineer in Toronto — amplified by a pe
 
 A minimal, editorial layout with a data / AI / gamer layer:
 
-- Interactive isometric “data landscape” hero (canvas) with a HUD
-- **Console:** a 3D retro PC on a desk (Three.js) whose CRT runs a live, interactive terminal with a small read-only filesystem (`ls`, `cd`, `cat`, `tree`, `grep`, `man` …) — click the screen or press <kbd>~</kbd>. The intro is a sticky note lying on the desk in the lamp light; click it to zoom in and read
+- **Console (front page):** a 3D retro PC on a desk (Three.js) whose CRT runs a live, interactive terminal with a small read-only filesystem (`ls`, `cd`, `cat`, `tree`, `grep`, `man` …) — click the screen or press <kbd>~</kbd>. The intro is a sticky note lying on the desk in the lamp light; click it to zoom in and read
 - Player card with photo, live XP, stats and a skills loadout
 - Quest-log career timeline
 - Medallion pipeline diagram (Bronze → Silver → Gold) with a simulated run log
@@ -16,14 +15,13 @@ A minimal, editorial layout with a data / AI / gamer layer:
 
 ## Stack
 
-Plain HTML, CSS and vanilla JavaScript — no build step. Three.js (r169, MIT) is vendored in `assets/vendor/` and lazy-loaded only when the console scrolls into view; without WebGL the terminal falls back to a flat CRT.
+Plain HTML, CSS and vanilla JavaScript — no build step. Three.js (r169, MIT) is vendored in `assets/vendor/` and loaded by the console module; without WebGL the terminal falls back to a flat CRT.
 
 ```
 index.html
 404.html
 assets/
   css/style.css
-  js/landscape.js   hero canvas
   js/main.js        interactions, theme, arcade mode
   js/pc.js          console section bootstrap (module)
   js/pc-scene.js    Three.js desk / retro PC scene

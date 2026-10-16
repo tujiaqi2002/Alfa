@@ -163,7 +163,7 @@
       var txt = t && !link ? t.getAttribute('data-cursor') : '';
       if (txt) { label.textContent = txt; c.classList.add('has-label'); }
       else c.classList.remove('has-label');
-      c.classList.toggle('is-hidden', !!(e.target.closest && e.target.closest('#landscape')));
+      c.classList.remove('is-hidden');
     }, { passive: true });
     document.addEventListener('mouseleave', function () { c.classList.add('is-hidden'); });
     // Lets canvas scenes refresh the label when it changes without a pointer move
@@ -285,6 +285,8 @@
   initCursor();
   initNav();
   boot(function () {
+    root.classList.add('is-booted');
+    document.dispatchEvent(new Event('jt:booted'));
     initReveal();
     initCounters();
   });
